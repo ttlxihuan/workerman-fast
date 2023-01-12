@@ -11,6 +11,8 @@
  * 
  * 特别说明：只有网关允许指定不同的连接协议，服务注册和业务处理服务均不可指定或修改连接协议，在这三个服务中已经固定了服务注册和业务处理连接协议，修改后将不可连接。
  * 
+ * 如果需要配置分布式，则应该在启动参数上指定 --node=name  系统会自动加载环境配置文件 envname-nodename.env （环境配置文件名必需按这种格式配置）
+ * 
  */
 
 return [
@@ -19,6 +21,10 @@ return [
      * 文档：https://www.workerman.net/doc/gateway-worker/register.html
      */
     'register' => [
+        /**
+         * 分布式需要配置此项，可以保证只在指定节点中启动
+         */
+        'active' => env('REGISTER_ACTIVE', false),
         /**
          * 服务注册地址，地址中不可指定协议，服务注册协议是内置固定的
          * 分布式时建议使用局域网地址，单机时使用本地地址
@@ -31,7 +37,11 @@ return [
      */
     'gateway' => [
         /**
-         * 网关对外名称
+         * 分布式需要配置此项，可以保证只在指定节点中启动
+         */
+        'active' => env('GATEWAY_ACTIVE', false),
+        /**
+         * 网关进程名称，用来区分不同的节点
          */
         'name' => env('GATEWAY_NAME', 'workerman-gateway'),
         /**
@@ -52,7 +62,7 @@ return [
         /**
          * 网关与用户的连接进行心跳处理
          * 心跳包用来保持连接状态，分网关给用户发和用户给网关发两种模式
-         * 
+         * 心跳包处理是通过循环所有连接进行判断处理的，连接数越多越耗性能，间隔时间不建议太短
          */
         'ping' => [
             /**
@@ -84,6 +94,13 @@ return [
      * 文档：https://www.workerman.net/doc/gateway-worker/business-worker.html
      */
     'worker' => [
+        /**
+         * 分布式需要配置此项，可以保证只在指定节点中启动
+         */
+        'active' => env('WORKER_ACTIVE', false),
+        /**
+         * 业务进程名称，用来区分不同的节点
+         */
         'name' => env('WORKER_NAME', 'workerman-worker'),
     ],
     /**

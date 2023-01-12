@@ -8,9 +8,10 @@ use \GatewayWorker\Register;
 
 require_once __DIR__ . '/../src/bootstrap.php';
 
-\WorkermanFast\Log::info('运行环境：' . env('APP_ENV'));
-
-// 分布时不需要启动该文件
+// 分布时此文件一般只启动在一个节点中，当地址为空时则不启动
+if (config('server.register.active', true)) {
+    return;
+}
 // register 必须是text协议
 $register = new Register('text://' . config('server.register.addr'));
 
@@ -18,4 +19,3 @@ $register = new Register('text://' . config('server.register.addr'));
 if (!defined('GLOBAL_START')) {
     Worker::runAll();
 }
-

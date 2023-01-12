@@ -8,6 +8,11 @@ use \GatewayWorker\BusinessWorker;
 
 require_once __DIR__ . '/../src/bootstrap.php';
 
+// 分布时此文件启动按需使用
+if (!config('server.worker.active', true)) {
+    return;
+}
+
 // bussinessWorker 进程
 $worker = new BusinessWorker();
 // worker名称
@@ -23,4 +28,3 @@ $worker->eventHandler = \WorkermanFast\Event::class;
 if (!defined('GLOBAL_START')) {
     Worker::runAll();
 }
-

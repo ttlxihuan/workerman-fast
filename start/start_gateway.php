@@ -3,14 +3,15 @@
 /**
  * 网关收发服务启动处理
  */
-use App\EnvConfig;
 use \Workerman\Worker;
-use \Workerman\WebServer;
 use \GatewayWorker\Gateway;
-use \GatewayWorker\BusinessWorker;
-use \Workerman\Autoloader;
 
 require_once __DIR__ . '/../src/bootstrap.php';
+
+// 分布时此文件一般只启动几个，每个节点对外监听地址不相同
+if (!config('server.gateway.active', true)) {
+    return;
+}
 
 // gateway 进程，这里使用Text协议，可以用telnet测试
 $gateway = new Gateway(config('server.gateway.listen'));
