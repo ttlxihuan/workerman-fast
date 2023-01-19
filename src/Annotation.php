@@ -13,68 +13,66 @@
  * 方法注解用来提取注解操作数据，通过类中定义的键名进行存储
  * 
  * 所有注解开始是 
- *      @register(name="annotation", key="type", attach="")
- *          name    注册需要使用的注解名，此名为可使用的注解名，需要保存命名规则（与PHP命令规则一至），name = register 无效
- *          key     注册注解存储键名，此名为提取可使用注解名定义的参数名，将对应的参数值作为存储键名，方便提取
- *          attach  注解附加到注解数据上，如果指定数据不存在则此注解无效
- *      此注册表示当前类及子类的方法均可使用注解 @annotation(type="键名值")
- *      如果不指定type则为全局数据（即所有type均能提取）
- *      也可以指定其它参数，并且不限制参数个数，比如：@annotation(type="键名值", name=2, return=false)
+ *      
+ *    注册注解必需使用在基类上（注册必需定义在类上，不可使用在方法上），其所有子类将生效注册的注解，注册的注解只会向下复用（子类定义的注解不可使用在父类上）
+ *    注册顺序会影响应用时调用顺序，一般建议最后调用的注解必需注册在最下面，相同注解名只能注册一次（当前类及其子类范围中）
  * 
- *      注解最终参数功能受各模块限制：
- *          Timer
- *              定时器注解，注解名由注册决定
- *              类默认注册：
- *                  @register(name="timer", key="id")
- *                  @timer(id=0, interval=1, persistent=true)
- *              方法注解参数：
- *                  @timer(id=0, interval=1, persistent=true)
- *                      id          定时器启动进程ID，建议使用0，否则win系统下无法启动
- *                      interval    定时间隔时长，默认为1s
- *                      persistent  是否为持久定时，默认true
+ *      【注解使用】
+ *      注册可使用注解处理类，使用时用类名（去掉命令空间）
+ *      @Register(class="")
+ *          class   定义注解应用时处理类，类必需继承相关接口
  * 
- *          Controller
- *              控制器注解，注解名由注册决定
- *              类默认注册：
- *                  @register(name="request", key="type")
- *                  @register(name="useWmiddleware", key="action")
- *              方法注解参数：
- *                  @request(type="", prefix="")
- *                      type        请求类型名，如同url地址
- *                      prefix      类型名前缀，主要给类注解使用，类中指定下面的方法均会携带
+ *      【注解应用处理类】
+ *      注册注解应用处理器可使用位置
+ *      @DefineUse(function=true, class=true, key="name")
+ *          function    指定是否能在方法中使用，默认不可以
+ *          class       指定是否能在类中使用，默认不可以
+ *      注解应用处理类定义参数
+ *      @DefineParam(name="", type="", default="")
+ *          name    指定参数名，同一个注解应用处理类下参数名不可重复
+ *          type    限制这个参数的数据类型（不指定则可为任何类型），暂时只支持：string、int、float、bool
+ *          default 指定默认值，不指定则必需在使用注解时指定值
  * 
- *                  @useWmiddleware(action="")
- *                      action      使用中间件动作名，与中间件定义相同即可
  * 
- *          Middleware
- *              中间件注解，注解名由注册决定
- *              类默认注册：
- *                  @register(name="wmiddleware", key="action")
- *              方法注解参数：
- *                  @wmiddleware(action="")
- *                      action      指定中间件动作名，动作名主要有各件事和控制器中定义的动作名，中间件在其它处理前调用，并且可以中断后续执行
+ *    1、注解解析将生成的数据写入注解解析对象中，将在注解解析对象中创建注解应用处理对象进行使用
+ *    2、在要使用注解的地方创建注解解析处理器，使用时直接进行调用即可，注解解析处理对象会按顺序调用内部的注解应用处理对象，当处理对象发出异常时会终止向下运行注解应用处理器
+ * 
  * 
  * 类中定义的注解信息可用来填充方法中共用的参数，并且能继承上级类定义，注册的注解参数可以自由增减（默认参数需要保留），在调用对应方法时可以获取到注解参数
  * 多个注解表示多个记录，即使相同的注解
  * 
+ * 类注解处理
+ * 1、添加全局单一处理函数
+ * 2、绑定到每个函数的处理函数
+ * 3、绑定到每个函数的索引数据
+ * 4、添加全局单一索引数据
+ * 
+ * 函数注解处理
+ * 1、绑定给函数的处理函数
+ * 2、绑定给函数的索引数据
+ * 3、函数需要嵌套包含，方便可以在处理函数内部向下调用
+
  */
 
 namespace WorkermanFast;
 
 use Exception;
+use Reflector;
 use ReflectionClass;
+use ReflectionMethod;
+use WorkermanFast\Annotations\iAnnotation;
 
 class Annotation {
 
     /**
-     * @var array 注解专用项集
+     * @var array 回调集合，通过方法名调用
      */
-    protected $items = [];
+    protected $callbacks = [];
 
     /**
-     * @var array 注解通用项集
+     * @var array 索引集合，通过索引调用
      */
-    protected $global = [];
+    protected $indexes = [];
 
     /**
      * 初始化
@@ -93,13 +91,58 @@ class Annotation {
     }
 
     /**
+     * 获取默认注册注解应用处理器
+     * @return array
+     */
+    protected function getDefaultRegisterUses(): array {
+        return [
+            // @Register(name="timer", class="")
+            'Register' => [
+                'class' => true,
+                'params' => [
+                    'class' => ['type' => 'string'],
+                ],
+                'instance' => new Annotations\Register(),
+            ],
+        ];
+    }
+
+    /**
+     * 获取默认定义注解应用处理器
+     * @return array
+     */
+    protected function getDefaultDefineUses(): array {
+        return [
+            // @DefineUse(function=true, class=true, key="name")
+            'DefineUse' => [
+                'class' => true,
+                'params' => [
+                    'function' => ['type' => 'bool', 'default' => false],
+                    'class' => ['type' => 'bool', 'default' => false],
+                ],
+                'instance' => new Annotations\DefineUse()
+            ],
+            // @DefineParam(name="", type="", default="")
+            'DefineParam' => [
+                'class' => true,
+                'params' => [
+                    'name' => ['type' => 'string'],
+                    'type' => ['type' => 'string'],
+                    'default' => [],
+                ],
+                'instance' => new Annotations\DefineParam()
+            ],
+        ];
+    }
+
+    /**
      * 加载注解
      * @param string $baseClass
      * @param string $baseNamespace
      * @param string $path
      * @throws Exception
      */
-    public function load(string $baseClass, string $baseNamespace, string $path) {
+    protected function load(string $baseClass, string $baseNamespace, string $path) {
         if (!class_exists($baseClass)) {
             throw new Exception('要加载的注解基类 ' . $baseClass . ' 不存在');
         }
@@ -109,7 +152,7 @@ class Annotation {
             $suffix = end($array);
             $children = [];
             $basePath = realpath($path);
-            foreach (glob($basePath . '/*' . $suffix . '.php') as $file) {
+            foreach (glob("{$basePath}/*{$suffix}.php'") as $file) {
                 $childClass = rtrim($baseNamespace . str_replace([$basePath, '/'], ['', '\\'], dirname($file)), '\\') . '\\' . basename($file, '.php');
                 if (trim($childClass, '\\') === trim($baseClass, '\\')) {
                     continue;
@@ -123,113 +166,23 @@ class Annotation {
                     throw new Exception('要加载的注解类 ' . $childClass . ' 不存在或不继承基类： ' . $baseClass);
                 }
             }
-            $this->extract(new ReflectionClass($baseClass), $children);
+            $this->extractParentClass(new ReflectionClass($baseClass), $children);
         } else {
             throw new Exception('要加载的注解目录 ' . $path . ' 不能正常访问');
         }
     }
 
     /**
-     * 获取注册定义数据体
-     * @param ReflectionClass $class
-     * @param array $base
-     * @return array
-     */
-    protected function getRegister(ReflectionClass $class, array $base = []) {
-        $params = $this->parse($class);
-        foreach ($base as $name => $items) {
-            $params[$name] = array_merge($items, $params[$name] ?? []);
-        }
-        // 整理注册数据
-        if (isset($params['register'])) {
-            $alone = [];
-            $attach = [];
-            foreach ($params['register'] as $register) {
-                if (isset($register['attach'])) {
-                    $attach[$register['attach']][] = $register;
-                } else {
-                    $alone[] = $register;
-                }
-            }
-            foreach ($alone as &$register) {
-                if (isset($attach[$register['name']])) {
-                    $register['attaches'] = $attach[$register['name']];
-                }
-            }
-            $params['register'] = $alone;
-        }
-        return $params;
-    }
-
-    /**
-     * 生成注解数据
-     * @param ReflectionClass $class
-     * @param array $base
-     */
-    protected function make(ReflectionClass $class, array $base = []) {
-        $instance = $class->newInstance();
-        $params = $this->getRegister($class, $base);
-        // 相近父类是当前指定的基类直接处理
-        foreach ($class->getMethods() as $refMethod) {
-            if ($refMethod->isPublic() && !$refMethod->isConstructor() && !$refMethod->isDestructor() && !$refMethod->isStatic()) {
-                $data = $this->parse($refMethod);
-                foreach ($params['register'] ?? [] as $register) {
-                    $name = $register['name'] ?? null;
-                    if (empty($name) || $name == 'register') {
-                        continue;
-                    }
-                    $attaches = [];
-                    foreach ($register['attaches'] ?? [] as $attach) {
-                        $attachName = $attach['name'] ?? null;
-                        if (empty($attachName) || $attachName == 'register') {
-                            continue;
-                        }
-                        foreach ($data[$attachName] ?? [] as $item) {
-                            if (isset($params[$attachName])) {
-                                foreach ($params[$attachName] as $bItem) {
-                                    $attaches[$attachName][] = array_merge($bItem, $item);
-                                }
-                            } else {
-                                $attaches[$attachName][] = $item;
-                            }
-                        }
-                    }
-                    $key = $register['key'] ?? null;
-                    $array = [];
-                    foreach ($data[$name] ?? [] as $item) {
-                        $item['@call'] = [$instance, $refMethod->getName()];
-                        $item['@attaches'] = $attaches;
-                        if (isset($params[$name])) {
-                            foreach ($params[$name] as $bItem) {
-                                $mergeKey = ($bItem[$key] ?? '') . ($item[$key] ?? '');
-                                $array[$mergeKey][] = array_merge($bItem, $item, is_null($key) ? [] : [$key => $mergeKey]);
-                            }
-                        } else {
-                            $array[$item[$key] ?? ''][] = $item;
-                        }
-                    }
-                    foreach ($array as $key => $items) {
-                        if ($key === '' || $key === '*') {
-                            $this->global[$name] = array_merge($this->global[$name] ?? [], $items);
-                        } else {
-                            $this->items[$name][$key] = array_merge($this->items[$name][$key] ?? [], $items);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 提取注解数据
+     * 从父类开始向下提取注解数据
      * @param ReflectionClass $baseRef
      * @param array $childrenRef
-     * @param array $base
+     * @param array $uses
+     * @param array $data
      * @return int
      */
-    protected function extract(ReflectionClass $baseRef, array &$childrenRef, array $base = []) {
+    protected function extractParentClass(ReflectionClass $baseRef, array &$childrenRef, array $uses = [], array $data = []): int {
+        $items = $this->apply($baseRef, $uses, $data);
         $count = 0;
-        $params = $this->getRegister($baseRef, $base);
         foreach ($childrenRef as $index => $ref) {
             if (!is_subclass_of($ref->getName(), $baseRef->getName())) {
                 continue;
@@ -244,17 +197,259 @@ class Annotation {
                 } while ($parent = $parent->getParentClass());
                 if ($existParent) {
                     unset($childrenRef[$existParent->getName()]);
-                    $this->extract($existParent, $childrenRef, $params);
+                    $this->extractParentClass($existParent, $childrenRef, $uses, $items);
                     continue;
                 }
             }
             // 解析库中没有下级
-            if (!$this->extract($ref, $childrenRef, $params) && $ref->isInstantiable()) {
+            if ($ref->isInstantiable() && !$this->extractParentClass($ref, $childrenRef, $uses)) {
                 unset($childrenRef[$index]);
-                $this->make($ref, $params);
+                $this->extractClass($ref, $uses, $items);
+                $count++;
             }
         }
         return $count;
+    }
+
+    /**
+     * 从类开始向下提取注解数据
+     * @param ReflectionClass $class
+     * @param array $uses
+     * @param array $data
+     */
+    protected function extractClass(ReflectionClass $class, array $uses = [], array $data = []) {
+        $object = $class->newInstance();
+        $items = $this->apply($class, $uses, $data);
+        // 剥离数据，索引类、回调类
+        $callbacks = [];
+        $indexes = [];
+        foreach ($this->callMake($uses, $items, ['class' => $class, 'parse' => $this]) as $index => $item) {
+            if ($item instanceof \Closure) {
+                $callbacks[] = $item;
+            } else {
+                $indexes[$index] = $item;
+            }
+        }
+        foreach ($class->getMethods(ReflectionMethod::IS_PUBLIC) as $refMethod) {
+            if ($refMethod->isConstructor() || $refMethod->isDestructor() || $refMethod->isStatic()) {
+                continue;
+            }
+            $name = $this->getRefName($refMethod);
+            foreach ($callbacks as $callback) {
+                $this->callbacks[$name][] = $callback;
+            }
+            $this->extractFunction($object, $refMethod, $uses, $indexes);
+        }
+    }
+
+    /**
+     * 从方法中提取注解数据
+     * @param object $object
+     * @param ReflectionMethod $refMethod
+     * @param array $uses
+     * @param array $indexes
+     */
+    protected function extractFunction(object $object, ReflectionMethod $refMethod, array $uses = [], array $indexes = []) {
+        $name = $this->getRefName($refMethod);
+        foreach ($this->callMake($uses, $this->apply($refMethod, $uses), ['indexs' => $indexes, 'method' => $name, 'parse' => $this]) as $index => $item) {
+            if ($item instanceof \Closure) {
+                $this->callbacks[$name][] = $item;
+            } else {
+                foreach ($item as $path) {
+                    $this->indexes[$index][$path][] = $name;
+                }
+            }
+        }
+        $method = $refMethod->getName();
+        $this->callbacks[$name][] = function (array $params)use ($object, $method) {
+            return $object->$method(...$params);
+        };
+    }
+
+    /**
+     * 注解应用处理
+     * @param Reflector $ref
+     * @param array $uses
+     * @param array $data
+     * @return array
+     * @throws Exception
+     */
+    protected function apply(Reflector $ref, array &$uses, array $data = []): array {
+        static $registerUses = null;
+        if (empty($registerUses)) {
+            $registerUses = $this->getDefaultRegisterUses();
+        }
+        // 注解定义位置名
+        $annotations = $this->parse($ref);
+        // 注册定义处理
+        $registers = $this->convert($ref, $annotations, $registerUses, $data);
+        try {
+            // 执行生成注解定义数据，合并注解应用处理
+            foreach ($this->callMake($registerUses, $registers, ['parse' => $this]) as $name => $params) {
+                if (isset($registerUses[$name]) || isset($uses[$name])) {
+                    throw new Exception("注册注解名 $name 已经占用");
+                }
+                $uses[$name] = $params;
+            }
+        } catch (Exception $err) {
+            throw new Exception($this->getRefName($ref) . ' ' . $err->getMessage());
+        }
+        // 常规注解应用处理类
+        $items = $this->convert($ref, $annotations, $uses, $data);
+        if (count($annotations)) {
+            throw new Exception($this->getRefName($ref) . " 未知注解 " . implode('、', array_keys($annotations)));
+        }
+        return $items;
+    }
+
+    /**
+     * 解析注解处理类定义信息
+     * @staticvar type $defineUses
+     * @param string $class
+     * @return array
+     * @throws Exception
+     */
+    public function parseDefine(string $class): array {
+        static $defineUses = null;
+        if (empty($defineUses)) {
+            $defineUses = $this->getDefaultDefineUses();
+        }
+        if (class_exists($class)) {
+            if (!$class instanceof iAnnotation) {
+                throw new Exception("注册注解处理类 $class 未继承注解处理接口 " . iAnnotation::class);
+            }
+            $ref = new ReflectionClass($class);
+            $annotations = $this->parse($ref);
+            $data = $this->callMake($defineUses, $this->convert($ref, $annotations, $defineUses));
+            if (count($annotations)) {
+                throw new Exception('注解处理类 ' . $this->getRefName($ref) . " 使用未知注解 " . implode('、', array_keys($annotations)));
+            }
+            return $data;
+        } else {
+            throw new Exception("注册注解处理类 $class 不存在");
+        }
+    }
+
+    /**
+     * 按定义注解信息转换注解数据
+     * @param Reflector $ref
+     * @param array $annotations
+     * @param array $defines
+     * @param array $data
+     * @return array
+     * @throws Exception
+     */
+    protected function convert(Reflector $ref, array &$annotations, array $defines, array $data = []): array {
+        // 注册定义应用处理
+        foreach ($defines as $name => $define) {
+            if (empty($annotations[$name])) {
+                continue;
+            }
+            if (empty($define['class']) && $ref instanceof ReflectionClass) {
+                throw new Exception($this->getRefName($ref) . " 指定了不可在定义类的位置使用的注解 $name");
+            }
+            if (empty($define['function']) && $ref instanceof ReflectionMethod) {
+                throw new Exception($this->getRefName($ref) . " 指定了不可在定义方法的位置使用的注解 $name");
+            }
+            // 注解应用处理
+            if (empty($define['instance']) || !is_object($define['instance'])) {
+                throw new Exception($this->getRefName($ref) . " 注解 $name 应用处理类错误");
+            }
+            $define_params = $define['params'] ?: [];
+            foreach ($annotations[$name] as $params) {
+                $parameters = [];
+                foreach ($define_params as $attrname => $param) {
+                    if (isset($params[$attrname])) {
+                        $value = $params[$attrname];
+                        unset($params[$attrname]);
+                    } elseif (isset($param['default'])) {
+                        $value = $param['default'];
+                    } else {
+                        throw new Exception($this->getRefName($ref) . " 注解 $name 必需指定属性 $attrname");
+                    }
+                    if (empty($param['type']) || gettype($value) == $param['type']) {
+                        $parameters[$attrname] = $value;
+                    } else {
+                        throw new Exception($this->getRefName($ref) . " 注解 $name 属性 $attrname 数据类型必需是 {$param['type']}");
+                    }
+                }
+                if (count($params)) {
+                    throw new Exception($this->getRefName($ref) . " 注解 $name 指定了未知属性 " . implode('、', array_keys($params)));
+                }
+                $data[$name][] = $parameters;
+            }
+            unset($annotations[$name]);
+        }
+        return $data;
+    }
+
+    /**
+     * 注解数据生成处理调用
+     * @param array $defines
+     * @param array $params
+     * @param array $input
+     * @return array
+     */
+    protected function callMake(array $defines, array $params, array $input = []): array {
+        $result = [];
+        foreach ($defines as $name => $define) {
+            if (empty($params[$name])) {
+                continue;
+            }
+            $result = array_merge($result, $define['instance']->make($params[$name], $input));
+        }
+        return $result;
+    }
+
+    /**
+     * 添加注解调用
+     * @param Reflector $ref
+     * @param \Closure $callback
+     */
+    public function addCall(Reflector $ref, \Closure $callback) {
+        $this->callbacks[$this->getRefName($ref)][] = $callback;
+    }
+
+    /**
+     * 添加注解索引
+     * @param string $name
+     * @param string $index
+     * @param Reflector $ref
+     */
+    public function addCallIndex(string $name, string $index, Reflector $ref) {
+        $this->indexes[$name][$index][] = $this->getRefName($ref);
+    }
+
+    /**
+     * 调用注解函数
+     * @param string $name
+     * @param array $params
+     * @return mixed
+     */
+    public function call(string $name, ...$params) {
+        $callbacks = $this->callbacks[$name] ?? [];
+        $next = function()use(&$callbacks, &$next, &$params) {
+            if ($callback = array_shift($callbacks)) {
+                return $callback($params, $next);
+            }
+        };
+        return $next();
+    }
+
+    /**
+     * 通过注解索引调用注解函数
+     * @param string $name
+     * @param string $index
+     * @param array $params
+     * @return mixed
+     */
+    public function callIndex(string $name, string $index, ...$params) {
+        foreach ($this->indexes[$name][$index] ?? [] as $method) {
+            if (is_null($result = $this->call($method, ...$params))) {
+                continue;
+            }
+            return $result;
+        }
     }
 
     /**
@@ -262,7 +457,7 @@ class Annotation {
      * @param Reflector $ref
      * @return array
      */
-    protected function parse(\Reflector $ref) {
+    protected function parse(Reflector $ref): array {
         $doc = $ref->getDocComment();
         $array = [];
         $nameReg = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
@@ -317,40 +512,25 @@ class Annotation {
                         continue 2;
                     }
                 }
-                if ($ref instanceof ReflectionClass) {
-                    throw new BusinessException('类注解语法错误:' . $ref->getName() . ' ' . $tag);
-                } else {
-                    throw new BusinessException('方法注解语法错误:' . $ref->getDeclaringClass()->getName() . '::' . $ref->getName() . ' ' . $tag);
-                }
+                throw new BusinessException($this->getRefName($ref) . " 注解 $tag 语法错误");
             }
         }
         return $array;
     }
 
     /**
-     * 获取注解数据
-     * @param string $name
-     * @param string $key
-     * @return array
+     * 获取反射名称
+     * @param Reflector $ref
+     * @return string
      */
-    public function get(string $name, string $key = null): array {
-        $global = $this->global[$name] ?? [];
-        $items = $this->items[$name] ?? [];
-        if (is_null($key)) {
-            if (count($global)) {
-                $items['*'] = $global;
-            }
-            return $items;
+    protected function getRefName(Reflector $ref): string {
+        if ($ref instanceof ReflectionClass) {
+            return $ref->getName();
+        } elseif ($ref instanceof ReflectionMethod) {
+            return $ref->getDeclaringClass()->getName() . '::' . $ref->getName();
+        } else {
+            return '';
         }
-        return array_merge($items[$key] ?? [], $global);
-    }
-
-    /**
-     * 获取注解数量
-     * @return int
-     */
-    public function count(string $name): int {
-        return count($this->items[$name] ?? []) + count($this->global[$name] ?? []);
     }
 
 }

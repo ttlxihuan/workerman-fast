@@ -12,9 +12,10 @@ require_once __DIR__ . '/../src/bootstrap.php';
 if (!config('server.gateway.active', true)) {
     return;
 }
-
+// 配置协议选项，比如开启ssl
+$context_option = config('server.gateway.context');
 // gateway 进程，这里使用Text协议，可以用telnet测试
-$gateway = new Gateway(config('server.gateway.listen'));
+$gateway = new Gateway(config('server.gateway.listen'), $context_option);
 // gateway名称，status方便查看
 $gateway->name = config('server.gateway.name');
 // gateway进程数
@@ -34,6 +35,20 @@ $gateway->pingInterval = config('server.gateway.ping.interval');
 $gateway->pingNotResponseLimit = config('server.gateway.ping.not_response');
 // 心跳数据
 $gateway->pingData = config('server.gateway.ping.send') ? config('server.gateway.ping.data') : '';
+
+if (isset($context_option['ssl'])) {
+    $gateway->transport = 'ssl';
+}
+
+// Http协议需要修改解码处理，转交到业务处理中
+$gateway->onWorkerStart = function (Gateway $gateway) {
+    if (trim($gateway->protocol, '\\') === trim(\Workerman\Protocols\Http::class, '\\')) {
+        $gateway->protocol = \WorkermanFast\Protocols\HttpGateway::class;
+    }
+};
+
+// 日志处理
+Gateway::$logFile = APP_PATH . '/logs/gateway.log';
 
 // 如果不是在根目录启动，则运行runAll方法
 if (!defined('GLOBAL_START')) {

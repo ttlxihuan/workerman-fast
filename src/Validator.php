@@ -63,11 +63,12 @@ class Validator {
 
     /**
      * 通过验证处理，不通过将报异常
-     * @param array $data
+     * @param array|ArrayAccess $data
+     * @param array $config
      * @return boolean
      * @throws BusinessException
      */
-    public static function adopt(array &$data, array $config) {
+    public static function adopt(&$data, array $config) {
         $titles = array_column($config, 'title', 'name');
         foreach ($config as $item) {
             if (empty($item['name']) || empty($item['rules'])) {
