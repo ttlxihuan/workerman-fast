@@ -10,7 +10,7 @@ class AuthMiddleware extends Middleware {
 
     /**
      * 访客验证
-     * @wmiddleware(action="guest")
+     * @Middleware(name="guest")
      */
     public function guest() {
         if (isset($_SESSION['user'])) {
@@ -20,7 +20,7 @@ class AuthMiddleware extends Middleware {
 
     /**
      * 授权验证
-     * @wmiddleware(action="auth")
+     * @Middleware(name="auth")
      */
     public function auth() {
         if (empty($_SESSION['user'])) {

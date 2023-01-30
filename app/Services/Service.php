@@ -9,9 +9,9 @@ namespace App\Services;
 use WorkermanFast\Annotation;
 
 /**
- * @Register(class="WorkermanFast\Annotations\Provide")
- * @Register(class="WorkermanFast\Annotations\Cache")
- * @Register(class="WorkermanFast\Annotations\Transaction")
+ * @Register(class='WorkermanFast\Annotations\Provide')
+ * @Register(class='WorkermanFast\Annotations\Cache')
+ * @Register(class='WorkermanFast\Annotations\Transaction')
  * 
  * 加载缓存三方包
  * @Provide(name="predis", action="cache")
@@ -21,7 +21,7 @@ use WorkermanFast\Annotation;
  * @Provide(name="laravel-model", action="model")
  * @Provide(name="doctrine-orm", action="model")
  */
-abstract class Service extends \WorkermanFast\AnnotationCall {
+abstract class Service {
 
     /**
      * @var Annotation 注解处理器

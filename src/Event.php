@@ -39,7 +39,7 @@ class Event {
     public static function onWorkerStart(BusinessWorker $businessWorker) {
         date_default_timezone_set('PRC');
         Annotations\Timer::$id = $businessWorker->id;
-        static::$businessWorker = $this;
+        static::$businessWorker = $businessWorker;
         static::$controllers->callIndex('bind-call', 'start', $businessWorker->id);
         // 全局定时器启动
         $timers = new Annotation(\App\Timers\Timer::class, '\\App\\Timers', APP_PATH . '/Timers');

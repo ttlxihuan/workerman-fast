@@ -91,7 +91,11 @@ class WebsocketRouter implements iAnnotation {
     protected function decode(string $format, $message): array {
         switch ($format) {
             case 'json':
-                return (array) json_decode($message, true);
+                $array = json_decode($message, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new BusinessException('消息解码错误');
+                }
+                return $array;
             case 'xml':
                 return $this->xmlToArray(simplexml_load_string($message, \SimpleXMLIterator::class));
         }

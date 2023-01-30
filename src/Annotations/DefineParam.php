@@ -29,7 +29,7 @@ class DefineParam implements iAnnotation {
             }
             $parameters[$item['name']] = $array;
         }
-        return $parameters;
+        return ['params' => $parameters];
     }
 
 }

@@ -48,7 +48,7 @@ $gateway->onWorkerStart = function (Gateway $gateway) {
 };
 
 // 日志处理
-Gateway::$logFile = APP_PATH . '/logs/gateway.log';
+Gateway::$logFile = APP_PATH . '/../logs/gateway.log';
 
 // 如果不是在根目录启动，则运行runAll方法
 if (!defined('GLOBAL_START')) {

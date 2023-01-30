@@ -24,15 +24,36 @@ class Cache {
      * @param \Closure $callback
      */
     public static function addMakeConnection(string $driver, \Closure $callback) {
-        
+        static::$makes[$driver] = $callback;
     }
 
-    public static function connection($name = null) {
-        
+    /**
+     * 缓存连接
+     * @param string $name
+     * @return mixed
+     */
+    public static function connection(string $name = null) {
+        if (is_null($name)) {
+            $name = config('cache.default');
+        }
+        if (empty(static::$connections[$name])) {
+            $options = config("cache.stores.$name");
+            if (empty(static::$makes[$options['driver']])) {
+                throw new \Exception("缓存连接 {$name} 未正确配置连接处理器");
+            }
+            static::$connections[$name] = static::$makes[$options['driver']]($options);
+        }
+        return static::$connections[$name];
     }
 
+    /**
+     * 调用缓存
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
     public static function __callStatic($name, $arguments) {
-        
+        return static::connection()->$name(...$arguments);
     }
 
 }

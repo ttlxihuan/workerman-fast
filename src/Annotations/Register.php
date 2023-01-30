@@ -25,6 +25,7 @@ class Register implements iAnnotation {
                 throw new Exception("注册注解名 $name 已经占用");
             }
             $annotations[$name] = $input['parse']->parseDefine($class);
+            $annotations[$name]['instance'] = new $item['class']();
         }
         return $annotations;
     }

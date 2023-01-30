@@ -152,8 +152,9 @@ class Annotation {
             $suffix = end($array);
             $children = [];
             $basePath = realpath($path);
-            foreach (glob("{$basePath}/*{$suffix}.php'") as $file) {
+            foreach (glob("{$basePath}/*{$suffix}.php") as $file) {
                 $childClass = rtrim($baseNamespace . str_replace([$basePath, '/'], ['', '\\'], dirname($file)), '\\') . '\\' . basename($file, '.php');
+                // 跳过基类自己
                 if (trim($childClass, '\\') === trim($baseClass, '\\')) {
                     continue;
                 }
@@ -315,7 +316,7 @@ class Annotation {
             $defineUses = $this->getDefaultDefineUses();
         }
         if (class_exists($class)) {
-            if (!$class instanceof iAnnotation) {
+            if (!is_subclass_of($class, iAnnotation::class)) {
                 throw new Exception("注册注解处理类 $class 未继承注解处理接口 " . iAnnotation::class);
             }
             $ref = new ReflectionClass($class);
@@ -353,7 +354,7 @@ class Annotation {
             }
             // 注解应用处理
             if (empty($define['instance']) || !is_object($define['instance'])) {
-                throw new Exception($this->getRefName($ref) . " 注解 $name 应用处理类错误");
+                throw new Exception($this->getRefName($ref) . " 注解 $name 应用处理类无处理实例");
             }
             $define_params = $define['params'] ?: [];
             foreach ($annotations[$name] as $params) {
@@ -362,12 +363,13 @@ class Annotation {
                     if (isset($params[$attrname])) {
                         $value = $params[$attrname];
                         unset($params[$attrname]);
-                    } elseif (isset($param['default'])) {
-                        $value = $param['default'];
                     } else {
-                        throw new Exception($this->getRefName($ref) . " 注解 $name 必需指定属性 $attrname");
+                        $value = $param['default'] ?? null;
+                        if (isset($param['type']) && is_null($value)) {
+                            throw new Exception($this->getRefName($ref) . " 注解 $name 必需指定属性 $attrname");
+                        }
                     }
-                    if (empty($param['type']) || gettype($value) == $param['type']) {
+                    if (empty($param['type']) || $this->checkDataType($value, $param['type'])) {
                         $parameters[$attrname] = $value;
                     } else {
                         throw new Exception($this->getRefName($ref) . " 注解 $name 属性 $attrname 数据类型必需是 {$param['type']}");
@@ -381,6 +383,32 @@ class Annotation {
             unset($annotations[$name]);
         }
         return $data;
+    }
+
+    /**
+     * 验证数据类型
+     * @param mixed $value
+     * @param string $type
+     * @return bool
+     */
+    protected function checkDataType($value, string $type): bool {
+        switch (gettype($value)) {
+            case 'boolean':
+                return $type === 'bool';
+            case 'integer':
+                return $type === 'int';
+            case 'double':
+                return $type === 'float';
+            case 'string':
+                return $type === 'string';
+            case 'array':
+                return $type === 'array';
+            case 'object':
+                return $type === 'object';
+            case 'NULL':
+                return $type === 'null';
+        }
+        return false;
     }
 
     /**
@@ -464,9 +492,8 @@ class Annotation {
         $valueReg = '([\+\-]?\d+(\.\d+)?|true|false|null|"([^"]+|\\\\\.)*"|\'[^\']*\')';
         if (preg_match_all("/@{$nameReg}\s*\(\s*({$nameReg}\s*=\s*{$valueReg}\s*(,\s*{$nameReg}\s*=\s*{$valueReg}\s*)*)?\)/i", $doc, $matches)) {
             foreach ($matches[0] as $item) {
-                if (!preg_match("/^@({$nameReg})\s*\(/i", $item, $names) || !preg_match_all("/({$nameReg})\s*=\s*({$valueReg})/i", $item, $params)) {
-                    continue;
-                }
+                preg_match("/^@({$nameReg})\s*\(/i", $item, $names);
+                preg_match_all("/({$nameReg})\s*=\s*({$valueReg})/i", $item, $params);
                 $name = $names[1];
                 $items = [];
                 foreach ($params[1] as $key => $param) {
@@ -512,7 +539,7 @@ class Annotation {
                         continue 2;
                     }
                 }
-                throw new BusinessException($this->getRefName($ref) . " 注解 $tag 语法错误");
+                throw new Exception($this->getRefName($ref) . " 注解 $tag 语法错误");
             }
         }
         return $array;

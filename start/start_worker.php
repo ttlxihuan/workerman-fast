@@ -4,6 +4,7 @@
  * 业务处理服务启动文件
  */
 use \Workerman\Worker;
+use WorkermanFast\Event;
 use \GatewayWorker\BusinessWorker;
 
 require_once __DIR__ . '/../src/bootstrap.php';
@@ -12,8 +13,6 @@ require_once __DIR__ . '/../src/bootstrap.php';
 if (!config('server.worker.active', true)) {
     return;
 }
-
-define('APP_PATH', realpath(__DIR__ . '/../app'));
 
 // bussinessWorker 进程
 $worker = new BusinessWorker();
@@ -24,13 +23,13 @@ $worker->count = defined('PROCESS_NUM') ? PROCESS_NUM : 1;
 // 服务注册地址
 $worker->registerAddress = config('server.register.addr');
 // 事件处理
-$worker->eventHandler = \WorkermanFast\Event::class;
+$worker->eventHandler = Event::class;
 
 // 网关管理，修改服务注册地址
 \GatewayWorker\Lib\Gateway::$registerAddress = $worker->registerAddress;
 
 // 日志处理
-BusinessWorker::$logFile = APP_PATH . '/logs/business-worker.log';
+BusinessWorker::$logFile = APP_PATH . '/../logs/business-worker.log';
 
 Event::init();
 

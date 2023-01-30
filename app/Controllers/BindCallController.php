@@ -7,15 +7,16 @@
 namespace App\Controllers;
 
 use Exception;
+use WorkermanFast\Message;
 use GatewayWorker\BusinessWorker;
 use WorkermanFast\BusinessException;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 
 /**
- * @Register(class="WorkermanFast\Annotations\BindCall")
+ * @Register(class='WorkermanFast\Annotations\BindCall')
  */
-class AbnormalController extends Controller {
+class BindCallController extends Controller {
 
     /**
      * http请求非正常时调用，无返回则无响应信息给终端
@@ -51,15 +52,15 @@ class AbnormalController extends Controller {
      * 
      * @BindCall()
      */
-    public function websocket(string $client_id, $message, Exception $error = null) {
+    public function websocket(string $client_id, array $message, Exception $error = null) {
         if ($error) {
             if ($error instanceof BusinessException) {
-                return ['code' => 'no', 'msg' => $error->getMessage()];
+                return Message::make($error->getMessage(), $error->getCodeValue());
             } else {
-                return ['code' => 'no', 'msg' => 'Internal Server Error'];
+                return Message::fail('Internal Server Error');
             }
         } else {
-            return ['code' => 'no', 'msg' => 'Not Found'];
+            return Message::fail('Not Found');
         }
     }
 

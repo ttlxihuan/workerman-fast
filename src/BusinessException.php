@@ -20,7 +20,7 @@ class BusinessException extends \Exception {
      * @param \Throwable $previous
      * @return \Exception
      */
-    public function __construct(string $message, string $codeValue = null, \Throwable $previous = NULL) {
+    public function __construct(string $message, string $codeValue = 'FAIL', \Throwable $previous = NULL) {
         parent::__construct($message, 0, $previous);
         $this->codeValue = $codeValue;
     }

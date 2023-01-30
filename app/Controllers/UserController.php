@@ -6,6 +6,9 @@
 
 namespace App\Controllers;
 
+use WorkermanFast\Message;
+use App\Services\UserSerivce;
+
 class UserController extends Controller {
 
     /**
@@ -14,15 +17,13 @@ class UserController extends Controller {
      * @param array $params
      * @return mixed
      * 
-     * @request(type="login")
-     * @useWmiddleware(action="guest")
-     * @validator(name="username", rules="required|int:1", title="用户ID")
-     * @validator(name="password", rules="required|string:3,100", title="用户密码")
+     * @WebsocketMethod(name="login")
+     * @UseWmiddleware(name="guest")
+     * @Validator(name="username", rules="required|int:1", title="用户ID")
+     * @Validator(name="password", rules="required|string:3,100", title="用户密码")
      */
     public function login(string $cid, array $params) {
-        $result = UserSerivce::call('login', $params['username'], $params['password']);
-        $result['cid'] = $cid;
-        return $result;
+        return UserSerivce::call('login', $cid, $params);
     }
 
     /**
@@ -31,8 +32,8 @@ class UserController extends Controller {
      * @param array $params
      * @return mixed
      * 
-     * @request(type="logout")
-     * @useWmiddleware(action="auth")
+     * @WebsocketMethod(name="logout")
+     * @UseWmiddleware(name="auth")
      */
     public function logout(string $cid, array $params) {
         UserSerivce::call('logout', $cid);

@@ -3,7 +3,7 @@
 # 脚本文件位置不可移动，允许非脚本目录下运行
 
 PHP_PATH=php
-ACTION_NAME="status"
+ACTION_NAME=""
 ENV_NAME="production"
 SHOW_HELP='0'
 NODE_NAME=''
@@ -69,21 +69,22 @@ SERVER_BASH_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/"; pwd)
 
 # 参数验证
 if [ -z "$ACTION_NAME" ];then
-    echo "请指定操作名"
-    exit 1
+    ACTION_NAME="status"
 fi
 if [ -z "$ENV_NAME" ];then
     echo "请指定环境名"
     exit 1
 fi
-if [ -e $PHP_PATH ] || which $PHP_PATH;then
+
+if [ -e $PHP_PATH ] || which $PHP_PATH >/dev/null 2>/dev/null;then
+    # 执行操作
+    if [[ $ACTION_NAME =~ ^(start|restart)$ ]];then
+        nohup $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME 2>&1 >$SERVER_BASH_PATH/logs/$(date '+%Y-%m-%d-%H-%M-%S').log &
+        $PHP_PATH ./bin/start.php $ACTION_NAME --env=$ENV_NAME
+    else
+        $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
+    fi
+else
     echo "请安装并配置PHP"
     exit 1
-fi
-# 执行操作
-if [[ $ACTION_NAME =~ ^(start|restart)$ ]];then
-    nohup $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME 2>&1 >$SERVER_BASH_PATH/logs/$(date '+%Y-%m-%d-%H-%M-%S').log &
-    bash $0 status $ENV_NAME
-else
-    $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
 fi

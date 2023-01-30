@@ -15,7 +15,7 @@
 namespace App\Middlewares;
 
 /**
- * @Register(class="WorkermanFast\Annotations\Middleware")
+ * @Register(class='WorkermanFast\Annotations\Middleware')
  */
 abstract class Middleware {
     
