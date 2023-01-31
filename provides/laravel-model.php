@@ -19,6 +19,11 @@ if (!class_exists(Manager::class) || !class_exists(Eloquent::class)) {
 
     $manager->getContainer()['config']['database.default'] = config('database.default') ?: 'default';
 
+    foreach (config('database.connections') ?: [] as $name => $connection) {
+        // 添加连接信息
+        $manager->addConnection($connection, $name);
+    }
+    // 事务注解处理
     $start = function($name = null)use($manager) {
         $manager->connection($name)->beginTransaction();
     };
@@ -28,20 +33,14 @@ if (!class_exists(Manager::class) || !class_exists(Eloquent::class)) {
     $rollback = function($name = null)use($manager) {
         $manager->connection($name)->rollBack();
     };
-
-    foreach (config('database.connections') ?: [] as $name => $connection) {
-        // 添加连接信息
-        $manager->addConnection($connection, $name);
-    }
-    // 事务处理
     Transaction::addHandle($start, $commit, $rollback);
 
     // ORM启用
     $manager->bootEloquent();
 
     // 生成类别名
-    class_exists('\DB') || class_alias(Capsule::class, '\DB');
-    class_exists('\ProvideModel') || class_alias(\Illuminate\Database\Eloquent::class, '\ProvideModel');
+    class_exists('\\DB') || class_alias(Manager::class, '\\DB');
+    class_exists('\\Model') || class_alias(\Illuminate\Database\Eloquent::class, '\\Model');
 })();
 
 return true;

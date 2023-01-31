@@ -26,13 +26,14 @@ Cache::addMakeConnection('redis', function (array $options) {
     return $client;
 });
 
-// 添加注解缓存处理
+// 缓存注解处理
 CacheAnnotation::addHandle(function($key, $data, $timeout, $name) {
     return Cache::connection($name)->setex($key, $timeout, $data);
 }, function($key, $name) {
     return Cache::connection($name)->get($key);
 });
 
-class_exists('\Cache') || class_alias(Cache::class, '\Cache');
+// 生成类别名
+class_exists('\\Cache') || class_alias(Cache::class, '\\Cache');
 
 return true;
