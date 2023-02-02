@@ -25,25 +25,14 @@ class Provide implements iAnnotation {
      * @return array
      */
     public function make(array $params, array $input): array {
-        $parse = $input['parse'];
-        $class = $input['class'];
         foreach ($params as $param) {
+            $action = $param['action'];
             $name = $param['name'];
-            $parse->addCallIndex($class, $param['action'], function()use($class, $name, $parse) {
-                $parse->call($class, $name);
-            });
-        }
-        $parse->addCall($class, function($name) {
-            if (empty(static::$provides[$name])) {
+            if (empty(static::$provides[$action])) {
                 $file = APP_PATH . "/../provides/{$name}.php";
-                if (file_exists($file) && is_readable($file)) {
-                    static::$provides[$name] = include $file;
-                }
+                static::$provides[$action] = file_exists($file) && is_readable($file) && require $file;
             }
-            if (isset(static::$provides[$name])) {
-                return static::$provides[$name];
-            }
-        });
+        }
         return [];
     }
 

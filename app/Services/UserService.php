@@ -7,9 +7,11 @@
 namespace App\Services;
 
 use App\Models\UserModel;
+use GatewayWorker\Lib\Gateway;
+use GatewayWorker\Lib\Context;
 use WorkermanFast\BusinessException;
 
-class UserSerivce extends Service {
+class UserService extends Service {
 
     /**
      * 通过用户名获取用户数据
@@ -22,11 +24,10 @@ class UserSerivce extends Service {
 
     /**
      * 登录操作
-     * @param string $cid
      * @param array $params
      * @return string
      */
-    public function login(string $cid, array $params) {
+    public function login(array $params) {
         $user = static::call('getUserByUsername', $params['username']);
         if ($user && password_verify($params['password'], $user['password'])) {
             $this->setLogin($user);
@@ -36,9 +37,8 @@ class UserSerivce extends Service {
 
     /**
      * 退出登录操作
-     * @param string $cid
      */
-    public function logout(string $cid) {
+    public function logout() {
         unset($_SESSION['user']);
     }
 
@@ -51,15 +51,16 @@ class UserSerivce extends Service {
             'id' => $user['id'],
             'username' => $user['username'],
         ];
+        Gateway::bindUid(Context::$client_id, $user['id']);
     }
 
     /**
      * 注册用户操作
-     * @param string $cid
+     * @param array $params
      * 
      * @Transaction()
      */
-    public function register(string $cid, array $params) {
+    public function register(array $params) {
         $user = static::call('getUserByUsername', $params['username']);
         if ($user) {
             throw new BusinessException('用户名已经被占用');
@@ -68,6 +69,10 @@ class UserSerivce extends Service {
             $user->save();
             $this->setLogin($user);
         }
+    }
+
+    protected function updateSession(UserModel $user) {
+        
     }
 
 }

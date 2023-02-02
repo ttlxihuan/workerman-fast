@@ -7,6 +7,7 @@
 namespace App\Services;
 
 use WorkermanFast\Annotation;
+use WorkermanFast\BusinessException;
 
 /**
  * @Register(class='WorkermanFast\Annotations\Provide')
@@ -29,22 +30,20 @@ abstract class Service {
     private static $annotation;
 
     /**
-     * 初始化处理
-     */
-    public function __construct() {
-        if (empty(self::$annotation)) {
-            self::$annotation = new Annotation(__CLASS__, __NAMESPACE__, __DIR__);
-        }
-    }
-
-    /**
      * 动态调用函数，支持注解功能
      * @param string $method
      * @param mixed $params
      * @return mixed
      */
     public static function call($method, ...$params) {
-        return static::$annotation->call(static::class . '::' . $method, ...$params);
+        if (empty(self::$annotation)) {
+            self::$annotation = new Annotation(__CLASS__, __NAMESPACE__, __DIR__);
+        }
+        $key = static::class . '::' . $method;
+        if (self::$annotation->hasCall($key)) {
+            return self::$annotation->call($key, ...$params);
+        }
+        throw new BusinessException("未知服务调用文件：$key");
     }
 
 }

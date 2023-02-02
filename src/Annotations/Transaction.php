@@ -45,17 +45,34 @@ class Transaction implements iAnnotation {
         $names = array_column($params, 'name');
         return [
             function(array $params, Closure $next) use($names) {
-                try {
-                    static::handle('start', ...$names);
-                    $res = $next();
-                    static::handle('commit', ...$names);
-                    return $res;
-                } catch (\Exception $err) {
-                    static::handle('commit', ...$names);
-                    throw $err;
+                if (count(static::$handles)) {
+                    try {
+                        static::start(...$names);
+                        $res = $next();
+                        static::end('commit', ...$names);
+                        return $res;
+                    } catch (\Exception $err) {
+                        static::end('commit', ...$names);
+                        throw $err;
+                    }
                 }
+                return $next();
             }
         ];
+    }
+
+    /**
+     * 调用处理事件
+     * @param string $names
+     */
+    public static function start(string ...$names) {
+        foreach ($names as $name) {
+            if (empty(static::$transaction[$name])) {
+                static::$transaction[$name] = 0;
+                static::$handles['start']($name);
+            }
+            static::$transaction[$name]++;
+        }
     }
 
     /**
@@ -63,14 +80,12 @@ class Transaction implements iAnnotation {
      * @param string $action
      * @param string $names
      */
-    public static function handle(string $action, string ...$names) {
-        if (count(static::$handles)) {
-            $tag = $action == 'start';
-            foreach ($names as $name) {
-                if (empty(static::$transaction[$name])) {
-                    static::$handles[$action]($name);
-                    static::$transaction[$name] = $tag;
-                }
+    public static function end(string $action, string ...$names) {
+        foreach ($names as $name) {
+            static::$transaction[$name]--;
+            if (static::$transaction[$name] <= 0) {
+                unset(static::$transaction[$name]);
+                static::$handles[$action]($name);
             }
         }
     }

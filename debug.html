@@ -338,7 +338,7 @@
             <div class="block">
                 <div class="title">Websocket地址</div>
                 <div class="action">
-                    <input type="text" value="ws://localhost" name="addr" placeholder="标准Websocket链接全地址"/>
+                    <input type="text" value="ws://localhost:16000" name="addr" placeholder="标准Websocket链接全地址"/>
                 </div>
             </div>
             <div class="nav">
@@ -365,13 +365,13 @@
                 <div class="block">
                     <div class="title">间隔时长（秒）</div>
                     <div class="action">
-                        <input type="text" name="ping-timeout" value="60" placeholder="<=0则无心跳处理"/>
+                        <input type="text" name="ping-timeout" value="30" placeholder="<=0则无心跳处理"/>
                     </div>
                 </div>
                 <div class="block">
                     <div class="title">心跳内容</div>
                     <div class="action">
-                        <input type="text" name="ping-data" value="empty" placeholder="心跳有效识别内容" size="60"/>
+                        <input type="text" name="ping-data" value="ping" placeholder="心跳有效识别内容" size="60"/>
                     </div>
                 </div>
             </div>
@@ -679,7 +679,7 @@
             // 发送处理
             var websocket = null, sendDataCallback = {
                 websocket: function (data, tabs) {
-                    if (!websocket || websocket.url !== data.addr) {
+                    if (!websocket || websocket.url.replace(/\/$/, '') !== data.addr.replace(/\/$/, '')) {
                         if (!/^ws(s)?:\/\/[\w\.\-_]+/.test(data.addr)) {
                             alert('WebSocket 连接地址格式错误');
                             return;
@@ -688,6 +688,12 @@
                         addEvent(websocket, 'open', function () {
                             while (websocket.send_listen.length > 0) {
                                 websocket.send(websocket.send_listen.shift());
+                            }
+                            // 处理心跳
+                            if (data['ping-timeout'] > 0) {
+                                setInterval(function () {
+                                    websocket.send(data['ping-data']);
+                                }, data['ping-timeout'] * 1000);
                             }
                         });
                         addEvent(websocket, 'message', function (event) {

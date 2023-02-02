@@ -22,14 +22,13 @@ class BindCallController extends Controller {
      * http请求非正常时调用，无返回则无响应信息给终端
      * 1、无匹配路由时
      * 2、异常报错时（正常能捕获的异常）
-     * @param string $client_id     终端唯一编号
      * @param Request $request      终端请求数据体
      * @param Exception $error      异常报错时有此参数
      * @return mixed
      * 
      * @BindCall()
      */
-    public function http(string $client_id, Request $request, Exception $error = null) {
+    public function http(Request $request, Exception $error = null) {
         if ($error) {
             if ($error instanceof BusinessException) {
                 return new Response(401, [], $error->getMessage());
@@ -45,14 +44,13 @@ class BindCallController extends Controller {
      * websocket请求非正常时调用，无返回则无响应信息给终端
      * 1、无匹配路由时
      * 2、异常报错时（正常能捕获的异常）
-     * @param string $client_id     终端唯一编号
      * @param array $message        终端请求数据包
      * @param Exception $error      异常报错时有此参数
      * @return mixed
      * 
      * @BindCall()
      */
-    public function websocket(string $client_id, array $message, Exception $error = null) {
+    public function websocket(array $message, Exception $error = null) {
         if ($error) {
             if ($error instanceof BusinessException) {
                 return Message::make($error->getMessage(), $error->getCodeValue());
@@ -71,7 +69,7 @@ class BindCallController extends Controller {
      * @BindCall()
      */
     public function start(int $id) {
-        BusinessWorker::log("[START] $id");
+        BusinessWorker::log("[START] worker-id: $id");
     }
 
     /**
@@ -81,7 +79,7 @@ class BindCallController extends Controller {
      * @BindCall()
      */
     public function stop(int $id) {
-        BusinessWorker::log("[STOP] $id");
+        BusinessWorker::log("[STOP] worker-id: $id");
     }
 
     /**

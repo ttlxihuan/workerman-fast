@@ -37,11 +37,10 @@ class HttpRouter implements iAnnotation {
 
     /**
      * 获取连接处理器
-     * @param string $client_id
      * @return TcpConnection|null
      */
-    protected function getTcpConnection($client_id) {
-        $address_data = Context::clientIdToAddress($client_id);
+    protected function getTcpConnection() {
+        $address_data = Context::clientIdToAddress(Context::$client_id);
         if ($address_data) {
             $address = long2ip($address_data['local_ip']) . ":{$address_data['local_port']}";
             return Event::$businessWorker->gatewayConnections[$address];
@@ -103,9 +102,8 @@ class HttpRouter implements iAnnotation {
         }
         $parse = $input['parse'];
         $parse->addCall($input['class'], function (array $params)use ($parse) {
-            list($client_id, $message) = $params;
-            $connection = $this->getTcpConnection($client_id);
-            $request = Http::decode($message, $connection);
+            $connection = $this->getTcpConnection();
+            $request = Http::decode($params[0], $connection);
             try {
                 // 静态文件处理
                 $result = $this->requestStatic($request);
@@ -114,14 +112,14 @@ class HttpRouter implements iAnnotation {
                     if (is_null($result)) {
                         $result = $parse->callIndex('http-router', $request->uri(), $request);
                         if (is_null($result)) {
-                            $result = $parse->callIndex('bind-call', 'http', $client_id, $request);
+                            $result = $parse->callIndex('bind-call', 'http', $request);
                         }
                     }
                 }
             } catch (BusinessException $err) {
-                $result = $parse->callIndex('bind-call', 'http', $client_id, $request);
+                $result = $parse->callIndex('bind-call', 'http', $request);
             } catch (\Exception $err) {
-                $result = $parse->callIndex('bind-call', 'http', $client_id, $request);
+                $result = $parse->callIndex('bind-call', 'http', $request);
                 BusinessWorker::log('[ERROR] ' . $err->getMessage() . PHP_EOL . $err->getTraceAsString());
             }
             if (is_null($result)) {

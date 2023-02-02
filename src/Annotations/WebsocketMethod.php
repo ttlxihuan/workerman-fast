@@ -9,7 +9,7 @@ namespace WorkermanFast\Annotations;
 
 /**
  * @DefineUse(function=true)
- * @DefineParam(name="name", type="string") 指定请求名，整个路由是前段路径+请求名，连接时无分隔符
+ * @DefineParam(name="name", type="string", default='') 指定请求名，整个路由是前段路径+请求名，连接时无分隔符
  */
 class WebsocketMethod implements iAnnotation {
 
@@ -21,9 +21,10 @@ class WebsocketMethod implements iAnnotation {
      */
     public function make(array $params, array $input): array {
         $indexs = [];
+        $method = explode('::', $input['method'])[1];
         foreach ($input['indexs']['websocket'] ?? [''] as $before) {
             foreach ($params as $param) {
-                $indexs[] = $before . $param['name'];
+                $indexs[] = $before . ($param['name'] ?: $method);
             }
         }
         return [

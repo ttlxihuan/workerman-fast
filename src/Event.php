@@ -72,8 +72,10 @@ class Event {
      * @param mixed $message 具体消息
      */
     public static function onMessage($client_id, $message) {
-        $result = static::$controllers->call(Controller::class, $client_id, $message);
-        Gateway::sendToCurrentClient($result);
+        $result = static::$controllers->call(Controller::class, $message);
+        if ($result !== null) {
+            Gateway::sendToCurrentClient($result);
+        }
     }
 
     /**

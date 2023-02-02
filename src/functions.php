@@ -26,17 +26,17 @@ function config(string $key = null, $default = null) {
 
 /**
  * 获取控制台参数
- * @param string $key
+ * @param string $name
  * @param mixed $default
  * @return mixed
  */
-function consoleArgv(string $key, $default = null) {
+function consoleArgv(string $name, $default = null) {
     global $argc, $argv;
     for ($key = 1; $key < $argc; $key++) {
         $option = $argv[$key];
-        if (strpos($option, "--$key=")) {
+        if (strpos($option, "--$name=") === 0) {
             list(, $value) = explode('=', $option, 2);
-        } elseif ($option === "--$key") {
+        } elseif ($option === "--$name") {
             $value = $argv[++$key] ?? '';
             // 如果值是参数结构则不认为是指定值
             if (strpos($value, '-') === 0) {

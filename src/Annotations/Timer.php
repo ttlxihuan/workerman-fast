@@ -34,14 +34,11 @@ class Timer implements iAnnotation {
             if ($param['id'] != static::$id) {
                 continue;
             }
-            $indexs[] = "id:{$param['id']}";
             TimerRun::add($param['interval'], function()use($parse, $method) {
                 $parse->call($method);
             }, $param['persistent']);
         }
-        return [
-            'timer' => $indexs
-        ];
+        return [];
     }
 
 }

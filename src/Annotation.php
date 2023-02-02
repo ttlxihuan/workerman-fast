@@ -128,7 +128,7 @@ class Annotation {
                 'params' => [
                     'name' => ['type' => 'string'],
                     'type' => ['type' => 'string'],
-                    'default' => [],
+                    'default' => ['type' => 'mixed'],
                 ],
                 'instance' => new Annotations\DefineParam()
             ],
@@ -365,11 +365,11 @@ class Annotation {
                         unset($params[$attrname]);
                     } else {
                         $value = $param['default'] ?? null;
-                        if (isset($param['type']) && is_null($value)) {
+                        if ($param['type'] !== 'mixed' && is_null($value)) {
                             throw new Exception($this->getRefName($ref) . " 注解 $name 必需指定属性 $attrname");
                         }
                     }
-                    if (empty($param['type']) || $this->checkDataType($value, $param['type'])) {
+                    if ($this->checkDataType($value, $param['type'])) {
                         $parameters[$attrname] = $value;
                     } else {
                         throw new Exception($this->getRefName($ref) . " 注解 $name 属性 $attrname 数据类型必需是 {$param['type']}");
@@ -392,6 +392,9 @@ class Annotation {
      * @return bool
      */
     protected function checkDataType($value, string $type): bool {
+        if ($type === 'mixed') {
+            return true;
+        }
         switch (gettype($value)) {
             case 'boolean':
                 return $type === 'bool';
@@ -481,6 +484,25 @@ class Annotation {
     }
 
     /**
+     * 判断是否存在调用
+     * @param string $name
+     * @return bool
+     */
+    public function hasCall(string $name): bool {
+        return isset($this->callbacks[$name]);
+    }
+
+    /**
+     * 判断是否存在索引
+     * @param string $name
+     * @param string $index
+     * @return bool
+     */
+    public function hasCallIndex(string $name, string $index): bool {
+        return isset($this->indexes[$name][$index]);
+    }
+
+    /**
      * 解析注解内容
      * @param Reflector $ref
      * @return array
@@ -516,7 +538,7 @@ class Annotation {
                                     $value = null;
                                     break;
                                 default:
-                                    if (strpos($value, '.') !== false) {
+                                    if (strpos($value, '.') === false) {
                                         $value = intval($value);
                                     } else {
                                         $value = floatval($value);

@@ -6,6 +6,8 @@
 
 namespace WorkermanFast;
 
+use Closure;
+
 class Validator {
 
     /**

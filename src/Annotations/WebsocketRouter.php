@@ -8,6 +8,8 @@
 
 namespace WorkermanFast\Annotations;
 
+use WorkermanFast\Annotation;
+use App\Controllers\Controller;
 use GatewayWorker\BusinessWorker;
 use WorkermanFast\BusinessException;
 
@@ -19,41 +21,55 @@ use WorkermanFast\BusinessException;
 class WebsocketRouter implements iAnnotation {
 
     /**
+     * @var array 路由记录
+     */
+    protected $routes = [];
+
+    /**
      * 注解处理数据生成
      * @param array $params
      * @param array $input
      * @return array
      */
     public function make(array $params, array $input): array {
+        if (!count($this->routes)) {
+            $this->create($input['parse']);
+        }
         $indexs = [];
-        $routes = [];
         // 数据整理
         foreach ($params as $param) {
             $indexs[$param['path']] = $param['path'];
-            $routes[$param['path']] = $param['route'];
+            $this->routes[$param['path']] = $param['route'];
         }
-        $parse = $input['parse'];
+        return [
+            'websocket' => $indexs,
+        ];
+    }
+
+    /**
+     * 创建路由处理器
+     * @param Annotation $parse
+     */
+    protected function create(Annotation $parse) {
         $ping = config('server.gateway.ping.data');
-        $ref = $input['class'];
-        $className = $ref->getName();
-        $parse->addCall($ref, function (array &$params)use ($parse, $routes, $ping, $className) {
-            list($client_id, $message) = $params;
+        $parse->addCall(new \ReflectionClass(Controller::class), function (array $params)use ($parse, $ping) {
+            $message = $params[0];
             if ($message === $ping) {
                 return;
             }
             $format = $this->getFormat($message);
-            $params[0] = $data = $this->decode($format, $message);
-            foreach ($routes as $route) {
-                if (isset($data[$route])) {
+            $data = $this->decode($format, $message);
+            foreach ($this->routes as $path => $route) {
+                if (isset($data[$route]) && (empty($path) || strpos($data[$route], $path) === 0)) {
                     try {
-                        $result = $parse->callIndex('websocket-router', $data[$route], $client_id, $data);
+                        $result = $parse->callIndex('websocket-router', $data[$route], $data);
                         if (is_null($result)) {
-                            $result = $parse->callIndex('bind-call', 'websocket', $client_id, $data);
+                            $result = $parse->callIndex('bind-call', 'websocket', $data);
                         }
                     } catch (BusinessException $err) {
-                        $result = $parse->callIndex('bind-call', 'websocket', $client_id, $data, $err);
+                        $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
                     } catch (\Exception $err) {
-                        $result = $parse->callIndex('bind-call', 'websocket', $client_id, $data, $err);
+                        $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
                         BusinessWorker::log('[ERROR] ' . $err->getMessage() . PHP_EOL . $err->getTraceAsString());
                     }
                     if (is_array($result) || $result instanceof \ArrayAccess) {
@@ -63,9 +79,6 @@ class WebsocketRouter implements iAnnotation {
                 }
             }
         });
-        return [
-            'websocket' => $indexs,
-        ];
     }
 
     /**
