@@ -42,8 +42,7 @@ class Event {
         static::$businessWorker = $businessWorker;
         static::$controllers->callIndex('bind-call', 'start', $businessWorker->id);
         // 全局定时器启动
-        $timers = new Annotation(\App\Timers\Timer::class, '\\App\\Timers', APP_PATH . '/Timers');
-        $timers->callIndex('timer', "id:{$businessWorker->id}");
+        new Annotation(\App\Timers\Timer::class, '\\App\\Timers', APP_PATH . '/Timers');
     }
 
     /**

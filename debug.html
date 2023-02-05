@@ -236,6 +236,12 @@
             }
             .respond-text{
                 white-space: pre-wrap;
+                line-height: 25px;
+                background-color: #eee;
+                width: calc(100% - 20px);
+                margin: 0 auto;
+                padding: 10px;
+                margin-bottom: 10px;
             }
         </style>
     </head>
@@ -387,7 +393,7 @@
                     <div data-call="empty">清空</div>
                 </div>
             </div>
-            <div class="block" id="websocket-respond">
+            <div class="block block-column" id="websocket-respond">
                 <div class="nav">
                     <div data-type="websocket-original-format">原始格式</div>
                     <div data-type="websocket-json-format">JSON格式化</div>
@@ -685,23 +691,25 @@
                             return;
                         }
                         websocket = new window.WebSocket(data.addr);
+                        var timer;
                         addEvent(websocket, 'open', function () {
                             while (websocket.send_listen.length > 0) {
                                 websocket.send(websocket.send_listen.shift());
                             }
                             // 处理心跳
                             if (data['ping-timeout'] > 0) {
-                                setInterval(function () {
+                                timer = setInterval(function () {
                                     websocket.send(data['ping-data']);
                                 }, data['ping-timeout'] * 1000);
                             }
                         });
                         addEvent(websocket, 'message', function (event) {
-                            document.querySelector('#websocket-original-format').innerHTML = getFormat(data, 'raw');
+                            document.querySelector('#websocket-original-format').innerHTML = getFormat(event.data, 'raw');
                             document.querySelector('#websocket-json-format').innerHTML = getFormat(event.data, 'json');
                         });
                         addEvent(websocket, 'close', function () {
                             websocket = null;
+                            clearInterval(timer);
                         });
                         addEvent(websocket, 'error', function (event) {
                             console.info('WebSocket error: ', event);

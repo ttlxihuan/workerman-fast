@@ -9,6 +9,8 @@
 namespace WorkermanFast\Annotations;
 
 use WorkermanFast\Annotation;
+use GatewayWorker\Lib\Gateway;
+use GatewayWorker\Lib\Context;
 use App\Controllers\Controller;
 use GatewayWorker\BusinessWorker;
 use WorkermanFast\BusinessException;
@@ -59,24 +61,34 @@ class WebsocketRouter implements iAnnotation {
             }
             $format = $this->getFormat($message);
             $data = $this->decode($format, $message);
-            foreach ($this->routes as $path => $route) {
-                if (isset($data[$route]) && (empty($path) || strpos($data[$route], $path) === 0)) {
-                    try {
+            if ($data === false) {
+                $result = $parse->callIndex('bind-call', 'websocket', [], new BusinessException('消息解码错误'));
+                goto RETURN_RESULT;
+            }
+            try {
+                foreach ($this->routes as $path => $route) {
+                    if (isset($data[$route]) && (empty($path) || strpos($data[$route], $path) === 0)) {
                         $result = $parse->callIndex('websocket-router', $data[$route], $data);
                         if (is_null($result)) {
                             $result = $parse->callIndex('bind-call', 'websocket', $data);
                         }
-                    } catch (BusinessException $err) {
-                        $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
-                    } catch (\Exception $err) {
-                        $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
-                        BusinessWorker::log('[ERROR] ' . $err->getMessage() . PHP_EOL . $err->getTraceAsString());
-                    }
-                    if (is_array($result) || $result instanceof \ArrayAccess) {
-                        $result[$route] = $data[$route];
-                        return $this->encode($format, $result);
+                        goto RETURN_RESULT;
                     }
                 }
+                $result = $parse->callIndex('bind-call', 'websocket', $data, new BusinessException('找不到路由'));
+            } catch (BusinessException $err) {
+                $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
+            } catch (\Exception $err) {
+                $result = $parse->callIndex('bind-call', 'websocket', $data, $err);
+                BusinessWorker::log('[ERROR] ' . $err->getMessage() . PHP_EOL . $err->getTraceAsString());
+            }
+            RETURN_RESULT:
+            if (is_array($result) || $result instanceof \ArrayAccess) {
+                if (isset($data[$route])) {
+                    $result[$route] = $data[$route];
+                    return $this->encode($format, $result);
+                }
+                Gateway::closeClient(Context::$client_id, $message);
             }
         });
     }
