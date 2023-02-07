@@ -29,7 +29,7 @@ class Provide implements iAnnotation {
             $action = $param['action'];
             $name = $param['name'];
             if (empty(static::$provides[$action])) {
-                $file = APP_PATH . "/../provides/{$name}.php";
+                $file = BASE_PATH . "/provides/{$name}.php";
                 static::$provides[$action] = file_exists($file) && is_readable($file) && require $file;
             }
         }

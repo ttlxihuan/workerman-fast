@@ -9,7 +9,8 @@ require_once __DIR__ . '/functions.php';
 // 自动加载类
 require_once __DIR__ . '/../vendor/autoload.php';
 
-defined('APP_PATH') || define('APP_PATH', realpath(__DIR__ . '/../app'));
+defined('BASE_PATH') || define('BASE_PATH', realpath(__DIR__ . '/../'));
+defined('APP_PATH') || define('APP_PATH', realpath(BASE_PATH . '/app'));
 
 (function() {
     // 环境变量加载
@@ -25,5 +26,5 @@ defined('APP_PATH') || define('APP_PATH', realpath(__DIR__ . '/../app'));
 })();
 
 // 配置加载
-\WorkermanFast\Config::load(__DIR__ . '/../config');
+\WorkermanFast\Config::load(BASE_PATH . '/config');
 

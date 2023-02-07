@@ -16,7 +16,7 @@ if (!config('server.register.active', true)) {
 $register = new Register('text://' . config('server.register.addr'));
 
 // 日志处理
-Register::$logFile = APP_PATH . '/../logs/register.log';
+Register::$logFile = BASE_PATH . '/logs/register.log';
 
 // 如果不是在根目录启动，则运行runAll方法
 if (!defined('GLOBAL_START')) {

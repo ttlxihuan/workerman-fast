@@ -29,7 +29,7 @@ $worker->eventHandler = Event::class;
 \GatewayWorker\Lib\Gateway::$registerAddress = $worker->registerAddress;
 
 // 日志处理
-BusinessWorker::$logFile = APP_PATH . '/../logs/business-worker.log';
+BusinessWorker::$logFile = BASE_PATH . '/logs/business-worker.log';
 
 Event::init();
 

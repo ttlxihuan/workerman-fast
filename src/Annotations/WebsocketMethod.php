@@ -21,7 +21,7 @@ class WebsocketMethod implements iAnnotation {
      */
     public function make(array $params, array $input): array {
         $indexs = [];
-        $method = explode('::', $input['method'])[1];
+        $method = $input['ref']->getName();
         foreach ($input['indexs']['websocket'] ?? [''] as $before) {
             foreach ($params as $param) {
                 $indexs[] = $before . ($param['name'] ?: $method);

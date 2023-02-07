@@ -7,7 +7,6 @@
 namespace WorkermanFast\Annotations;
 
 use WorkermanFast\Annotation;
-use App\Middlewares\Middleware;
 
 /**
  * @DefineUse(function=true, class=true)
@@ -27,7 +26,12 @@ class UseWmiddleware implements iAnnotation {
         if (static::$annotation) {
             return;
         }
-        static::$annotation = new Annotation(Middleware::class, '\\App\\Middlewares', APP_PATH . '/Middlewares');
+        $config = config('annotation.middleware');
+        if (is_array($config)) {
+            static::$annotation = new Annotation(...$config);
+        } else {
+            throw new \Exception('请配置中间件注解信息');
+        }
     }
 
     /**

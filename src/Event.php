@@ -6,7 +6,6 @@
 
 namespace WorkermanFast;
 
-use App\Controllers\Controller;
 use \GatewayWorker\Lib\Gateway;
 use GatewayWorker\BusinessWorker;
 
@@ -27,7 +26,12 @@ class Event {
      */
     public static function init() {
         // 控制器加载
-        static::$controllers = new Annotation(Controller::class, '\\App\\Controllers', APP_PATH . '/Controllers');
+        $config = config('annotation.controller');
+        if (is_array($config)) {
+            static::$controllers = new Annotation(...$config);
+        } else {
+            throw new \Exception('请配置控制器注解信息');
+        }
     }
 
     /**
@@ -38,11 +42,15 @@ class Event {
      */
     public static function onWorkerStart(BusinessWorker $businessWorker) {
         date_default_timezone_set('PRC');
-        Annotations\Timer::$id = $businessWorker->id;
         static::$businessWorker = $businessWorker;
         static::$controllers->callIndex('bind-call', 'start', $businessWorker->id);
         // 全局定时器启动
-        new Annotation(\App\Timers\Timer::class, '\\App\\Timers', APP_PATH . '/Timers');
+        $config = config('annotation.timer');
+        if (is_array($config)) {
+            new Annotation(...$config);
+        } else {
+            throw new \Exception('请配定时器注解信息');
+        }
     }
 
     /**
@@ -71,7 +79,7 @@ class Event {
      * @param mixed $message 具体消息
      */
     public static function onMessage($client_id, $message) {
-        $result = static::$controllers->call(Controller::class, $message);
+        $result = static::$controllers->call('@', $message);
         if ($result !== null) {
             Gateway::sendToCurrentClient($result);
         }

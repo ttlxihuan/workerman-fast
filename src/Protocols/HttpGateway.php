@@ -6,6 +6,8 @@
 
 namespace WorkermanFast\Protocols;
 
+use Workerman\Connection\TcpConnection;
+
 class HttpGateway extends \Workerman\Protocols\Http {
 
     /**

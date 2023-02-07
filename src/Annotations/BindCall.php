@@ -20,7 +20,7 @@ class BindCall implements iAnnotation {
      */
     public function make(array $params, array $input): array {
         $indexs = [];
-        $name = explode('::', $input['method'])[1];
+        $name = $input['ref']->getName();
         foreach ($params as $param) {
             $indexs[] = $param['name'] ?: $name;
         }

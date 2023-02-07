@@ -41,7 +41,7 @@ class Cache implements iAnnotation {
         foreach ($params as $param) {
             $timeout = $param['timeout'];
         }
-        $method = $input['method'];
+        $method = $input['parse']->getRefName($input['ref']);
         return [
             function(array $params, Closure $next) use($timeout, $method, $name) {
                 if (count(static::$handles)) {

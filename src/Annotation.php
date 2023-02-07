@@ -2,56 +2,43 @@
 
 /*
  * 注解处理类
- * 注解分析并记录下来，方便后面提取操作
- * 类注解使用：
- *  1、注册注解名、键名
- *  2、定义注解基础数据，可合并到方法注解中
- * 方法注解使用：
- *  1、定义注册的注解名，并指定相关参数
+ * 注解使用：
+ *  1、注册注解处理类
+ *  2、定义注解处理类参数
+ *  3、使用注解并指定参数
  * 
- * 类注解用来定义方法中可使用的注解体，并且能继承上级类定义，属于叠加定义
- * 方法注解用来提取注解操作数据，通过类中定义的键名进行存储
+ * 注解注册应该放在根类上，注解注册是唯一的（注解解析实例内）
+ * 注解使用时子类会重写父类的注解参数，并渗透到子类方法中
  * 
- * 所有注解开始是 
- *      
- *    注册注解必需使用在基类上（注册必需定义在类上，不可使用在方法上），其所有子类将生效注册的注解，注册的注解只会向下复用（子类定义的注解不可使用在父类上）
- *    注册顺序会影响应用时调用顺序，一般建议最后调用的注解必需注册在最下面，相同注解名只能注册一次（当前类及其子类范围中）
- * 
- *      【注解使用】
- *      注册可使用注解处理类，使用时用类名（去掉命令空间）
+ * 所有注解使用前必需进行注册，注解解析器中已经预注册了几个基础注解处理类，通过这几个注解进行注册注解操作。
+ * 预注册注解
+ *   注册使用注解
  *      @Register(class="")
- *          class   定义注解应用时处理类，类必需继承相关接口
+ *          注册一个注解处理类，此类必需实现接口 WorkermanFast\Annotations\iAnnotation ，注解处理类需要处理解析出来的注解数据，生成调用处理功能。
+ *              class   注册处理类名，需要全类名，否则加载失败会报错
  * 
- *      【注解应用处理类】
- *      注册注解应用处理器可使用位置
- *      @DefineUse(function=true, class=true, key="name")
- *          function    指定是否能在方法中使用，默认不可以
- *          class       指定是否能在类中使用，默认不可以
- *      注解应用处理类定义参数
+ *   定义注解处理器
+ *      @DefineUse(function=false, class=false)
+ *          注解处理类专用注解，所有要注册的注解处理类均需要进行指定注解的使用范围。
+ *              function    指定注解是否可以方法上使用，默认否
+ *              class       指定注解是否可以类上使用，默认否
+ * 
  *      @DefineParam(name="", type="", default="")
- *          name    指定参数名，同一个注解应用处理类下参数名不可重复
- *          type    限制这个参数的数据类型（不指定则可为任何类型），暂时只支持：string、int、float、bool
- *          default 指定默认值，不指定则必需在使用注解时指定值
+ *          注解处理类专用注解，当注册的注解处理类需要参数时则通过此注解进行指定。多个参数时需要多次使用此注解
+ *              name        注解参数名
+ *              type        注解参数类型，不指定为 mixed，暂时只支持：string、int、float、bool、mixed
+ *              default     注解参数默认值
  * 
+ * 注解处理器处理均需要返回一个数组，在不同的注解类型时数组作用不一。
+ *      通用使用类注解
+ *          [callback, callback, index => name]   callback 为渗透到各方法中的切入函数，index 是送入方法注解提取合并使用
  * 
- *    1、注解解析将生成的数据写入注解解析对象中，将在注解解析对象中创建注解应用处理对象进行使用
- *    2、在要使用注解的地方创建注解解析处理器，使用时直接进行调用即可，注解解析处理对象会按顺序调用内部的注解应用处理对象，当处理对象发出异常时会终止向下运行注解应用处理器
+ *      通用使用方法注解
+ *          [callback, callback, index => name]   callback 为方法的切入函数，index 是方法索引调用路径
  * 
+ *      内部预注册注解
+ *          [name => array ...]   name 是注解使用名，array 是预处理注解数据体
  * 
- * 类中定义的注解信息可用来填充方法中共用的参数，并且能继承上级类定义，注册的注解参数可以自由增减（默认参数需要保留），在调用对应方法时可以获取到注解参数
- * 多个注解表示多个记录，即使相同的注解
- * 
- * 类注解处理
- * 1、添加全局单一处理函数
- * 2、绑定到每个函数的处理函数
- * 3、绑定到每个函数的索引数据
- * 4、添加全局单一索引数据
- * 
- * 函数注解处理
- * 1、绑定给函数的处理函数
- * 2、绑定给函数的索引数据
- * 3、函数需要嵌套包含，方便可以在处理函数内部向下调用
-
  */
 
 namespace WorkermanFast;
@@ -127,7 +114,7 @@ class Annotation {
                 'class' => true,
                 'params' => [
                     'name' => ['type' => 'string'],
-                    'type' => ['type' => 'string'],
+                    'type' => ['type' => 'string', 'default' => 'mixed'],
                     'default' => ['type' => 'mixed'],
                 ],
                 'instance' => new Annotations\DefineParam()
@@ -178,11 +165,12 @@ class Annotation {
      * @param ReflectionClass $baseRef
      * @param array $childrenRef
      * @param array $uses
-     * @param array $data
+     * @param array $base
      * @return int
      */
-    protected function extractParentClass(ReflectionClass $baseRef, array &$childrenRef, array $uses = [], array $data = []): int {
-        $items = $this->apply($baseRef, $uses, $data);
+    protected function extractParentClass(ReflectionClass $baseRef, array &$childrenRef, array $uses = [], array $base = []): int {
+        $items = $this->apply($baseRef, $uses);
+        $data = array_merge($base, $this->callMake($uses, $items, ['ref' => $baseRef, 'parse' => $this]));
         $count = 0;
         foreach ($childrenRef as $index => $ref) {
             if (!is_subclass_of($ref->getName(), $baseRef->getName())) {
@@ -198,14 +186,14 @@ class Annotation {
                 } while ($parent = $parent->getParentClass());
                 if ($existParent) {
                     unset($childrenRef[$existParent->getName()]);
-                    $this->extractParentClass($existParent, $childrenRef, $uses, $items);
+                    $this->extractParentClass($existParent, $childrenRef, $uses, $data);
                     continue;
                 }
             }
             // 解析库中没有下级
             if ($ref->isInstantiable() && !$this->extractParentClass($ref, $childrenRef, $uses)) {
                 unset($childrenRef[$index]);
-                $this->extractClass($ref, $uses, $items);
+                $this->extractClass($ref, $uses, $data);
                 $count++;
             }
         }
@@ -220,11 +208,11 @@ class Annotation {
      */
     protected function extractClass(ReflectionClass $class, array $uses = [], array $data = []) {
         $object = $class->newInstance();
-        $items = $this->apply($class, $uses, $data);
         // 剥离数据，索引类、回调类
         $callbacks = [];
         $indexes = [];
-        foreach ($this->callMake($uses, $items, ['class' => $class, 'parse' => $this]) as $index => $item) {
+        $items = $this->apply($class, $uses);
+        foreach (array_merge($data, $this->callMake($uses, $items, ['ref' => $class, 'parse' => $this])) as $index => $item) {
             if ($item instanceof \Closure) {
                 $callbacks[] = $item;
             } else {
@@ -252,7 +240,7 @@ class Annotation {
      */
     protected function extractFunction(object $object, ReflectionMethod $refMethod, array $uses = [], array $indexes = []) {
         $name = $this->getRefName($refMethod);
-        foreach ($this->callMake($uses, $this->apply($refMethod, $uses), ['indexs' => $indexes, 'method' => $name, 'parse' => $this]) as $index => $item) {
+        foreach ($this->callMake($uses, $this->apply($refMethod, $uses), ['indexs' => $indexes, 'ref' => $refMethod, 'parse' => $this]) as $index => $item) {
             if ($item instanceof \Closure) {
                 $this->callbacks[$name][] = $item;
             } else {
@@ -275,7 +263,7 @@ class Annotation {
      * @return array
      * @throws Exception
      */
-    protected function apply(Reflector $ref, array &$uses, array $data = []): array {
+    protected function apply(Reflector $ref, array &$uses): array {
         static $registerUses = null;
         if (empty($registerUses)) {
             $registerUses = $this->getDefaultRegisterUses();
@@ -283,7 +271,7 @@ class Annotation {
         // 注解定义位置名
         $annotations = $this->parse($ref);
         // 注册定义处理
-        $registers = $this->convert($ref, $annotations, $registerUses, $data);
+        $registers = $this->convert($ref, $annotations, $registerUses);
         try {
             // 执行生成注解定义数据，合并注解应用处理
             foreach ($this->callMake($registerUses, $registers, ['parse' => $this]) as $name => $params) {
@@ -296,7 +284,7 @@ class Annotation {
             throw new Exception($this->getRefName($ref) . ' ' . $err->getMessage());
         }
         // 常规注解应用处理类
-        $items = $this->convert($ref, $annotations, $uses, $data);
+        $items = $this->convert($ref, $annotations, $uses);
         if (count($annotations)) {
             throw new Exception($this->getRefName($ref) . " 未知注解 " . implode('、', array_keys($annotations)));
         }
@@ -340,7 +328,8 @@ class Annotation {
      * @return array
      * @throws Exception
      */
-    protected function convert(Reflector $ref, array &$annotations, array $defines, array $data = []): array {
+    protected function convert(Reflector $ref, array &$annotations, array $defines): array {
+        $data = [];
         // 注册定义应用处理
         foreach ($defines as $name => $define) {
             if (empty($annotations[$name])) {
@@ -434,11 +423,11 @@ class Annotation {
 
     /**
      * 添加注解调用
-     * @param Reflector $ref
      * @param \Closure $callback
+     * @param Reflector $ref
      */
-    public function addCall(Reflector $ref, \Closure $callback) {
-        $this->callbacks[$this->getRefName($ref)][] = $callback;
+    public function addCall(\Closure $callback, Reflector $ref = null) {
+        $this->callbacks[$ref ? $this->getRefName($ref) : '@'][] = $callback;
     }
 
     /**
@@ -447,8 +436,8 @@ class Annotation {
      * @param string $index
      * @param Reflector $ref
      */
-    public function addCallIndex(string $name, string $index, Reflector $ref) {
-        $this->indexes[$name][$index][] = $this->getRefName($ref);
+    public function addCallIndex(string $name, string $index, Reflector $ref = null) {
+        $this->indexes[$name][$index][] = $ref ? $this->getRefName($ref) : '@';
     }
 
     /**
@@ -564,6 +553,12 @@ class Annotation {
                 throw new Exception($this->getRefName($ref) . " 注解 $tag 语法错误");
             }
         }
+        // 兼容PHP8+注解
+        if (method_exists($ref, 'getAttributes')) {
+            foreach ($ref->getAttributes() as $attribute) {
+                $array[$attribute->getName()][] = $attribute->getArguments();
+            }
+        }
         return $array;
     }
 
@@ -572,13 +567,13 @@ class Annotation {
      * @param Reflector $ref
      * @return string
      */
-    protected function getRefName(Reflector $ref): string {
+    public function getRefName(Reflector $ref): string {
         if ($ref instanceof ReflectionClass) {
             return $ref->getName();
         } elseif ($ref instanceof ReflectionMethod) {
             return $ref->getDeclaringClass()->getName() . '::' . $ref->getName();
         } else {
-            return '';
+            throw new Exception('暂不支持映射类 ' . get_class($ref));
         }
     }
 

@@ -11,7 +11,6 @@ namespace WorkermanFast\Annotations;
 use WorkermanFast\Annotation;
 use GatewayWorker\Lib\Gateway;
 use GatewayWorker\Lib\Context;
-use App\Controllers\Controller;
 use GatewayWorker\BusinessWorker;
 use WorkermanFast\BusinessException;
 
@@ -54,7 +53,7 @@ class WebsocketRouter implements iAnnotation {
      */
     protected function create(Annotation $parse) {
         $ping = config('server.gateway.ping.data');
-        $parse->addCall(new \ReflectionClass(Controller::class), function (array $params)use ($parse, $ping) {
+        $parse->addCall(function (array $params)use ($parse, $ping) {
             $message = $params[0];
             if ($message === $ping) {
                 return;
