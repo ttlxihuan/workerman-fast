@@ -27,12 +27,12 @@ return [
         /**
          * 分布式需要配置此项，可以保证只在指定节点中启动
          */
-        'active' => env('REGISTER_ACTIVE', false),
+        'active' => workerEnv('REGISTER_ACTIVE', false),
         /**
          * 服务注册地址，地址中不可指定协议，服务注册协议是内置固定的
          * 分布式时建议使用局域网地址，单机时使用本地地址
          */
-        'addr' => env('REGISTER_ADDR', '127.0.0.1:18000'),
+        'addr' => workerEnv('REGISTER_ADDR', '127.0.0.1:18000'),
     ],
     /**
      * 网关配置
@@ -42,16 +42,16 @@ return [
         /**
          * 分布式需要配置此项，可以保证只在指定节点中启动
          */
-        'active' => env('GATEWAY_ACTIVE', false),
+        'active' => workerEnv('GATEWAY_ACTIVE', false),
         /**
          * 网关进程名称，用来区分不同的节点
          */
-        'name' => env('GATEWAY_NAME', 'workerman-gateway'),
+        'name' => workerEnv('GATEWAY_NAME', 'workerman-gateway'),
         /**
          * 网关对外监听协议及地址，用来与用户进行通信
          * 支持的协议有：websocket、text、frame、自定义协议、tcp等
          */
-        'listen' => env('GATEWAY_LISTEN', 'websocket://0.0.0.0:16000'),
+        'listen' => workerEnv('GATEWAY_LISTEN', 'websocket://0.0.0.0:16000'),
         /**
          * 启用ssl加密处理。如果是http则会变为https，如果是ws则会变成wss
          * 证书最好是购买的，这样才能保证终端验证顺利通过
@@ -68,13 +68,13 @@ return [
         /**
          * 网关与业务服务进行连接的地址配置，分布式时使用局域名，单机时使用本地地址
          */
-        'host' => env('GATEWAY_HOST', '127.0.0.1'),
+        'host' => workerEnv('GATEWAY_HOST', '127.0.0.1'),
         /**
          * 网关与业务服务进行连接的监听端口号，此端口号会与网关进程数相关
          * 每个进程数是在此端口号上进行累加值，因此当进程数据有多个时监听端口号将有多个
          * 端口号需要保证累加后有空余和不被占用
          */
-        'port' => env('GATEWAY_PORT', '19000'),
+        'port' => workerEnv('GATEWAY_PORT', '19000'),
         /**
          * 网关与用户的连接进行心跳处理
          * 心跳包用来保持连接状态，分网关给用户发和用户给网关发两种模式
@@ -93,10 +93,10 @@ return [
             'not_response' => 1,
             /**
              * 是否开启网关向用户端主动定时发送的心跳数据包
-             * 当用户在 not_response * interval 时间内有发送信息给网关，则网关路过发送本次心跳包
+             * 当用户在 not_response * interval 时间内有发送信息给网关，则网关跳过发送本次心跳包
              * 一般不建议网关主动发送心跳包，建议让用户端主动发送心跳包，只要用户发送间隔时间小于网关心跳时长即可
              */
-            'send' => 1,
+            'send' => 0,
             /**
              * 心跳数据包
              * 当开启网关发送心跳包时以此数据为心跳
@@ -113,11 +113,11 @@ return [
         /**
          * 分布式需要配置此项，可以保证只在指定节点中启动
          */
-        'active' => env('WORKER_ACTIVE', false),
+        'active' => workerEnv('WORKER_ACTIVE', false),
         /**
          * 业务进程名称，用来区分不同的节点
          */
-        'name' => env('WORKER_NAME', 'workerman-worker'),
+        'name' => workerEnv('WORKER_NAME', 'workerman-worker'),
     ],
     /**
      * 服务运行时区

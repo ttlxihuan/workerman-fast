@@ -7,7 +7,7 @@
 namespace App\Timers;
 
 /**
- * @Register(class='WorkermanFast\Annotations\Timer')
+ * @Register(class='Timer')
  */
 abstract class Timer {
     

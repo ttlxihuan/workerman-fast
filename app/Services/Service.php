@@ -6,13 +6,13 @@
 
 namespace App\Services;
 
-use WorkermanFast\Annotation;
+use WorkermanFast\AnnotationHandle;
 use WorkermanFast\BusinessException;
 
 /**
- * @Register(class='WorkermanFast\Annotations\Provide')
- * @Register(class='WorkermanFast\Annotations\Cache')
- * @Register(class='WorkermanFast\Annotations\Transaction')
+ * @Register(class='Provide')
+ * @Register(class='Cache')
+ * @Register(class='Transaction')
  * 
  * 加载缓存三方包
  * @Provide(name="predis", action="cache")
@@ -37,7 +37,7 @@ abstract class Service {
      */
     public static function call($method, ...$params) {
         if (empty(self::$annotation)) {
-            self::$annotation = new Annotation(__CLASS__, __NAMESPACE__, __DIR__);
+            self::$annotation = new AnnotationHandle(__CLASS__, __NAMESPACE__, __DIR__);
         }
         $key = static::class . '::' . $method;
         if (self::$annotation->hasCall($key)) {

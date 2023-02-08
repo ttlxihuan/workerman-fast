@@ -65,7 +65,7 @@ Options:
 fi
 
 # 获取根目录
-SERVER_BASH_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../start"; pwd)
+SERVER_BASH_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)
 
 # 参数验证
 if [ -z "$ACTION_NAME" ];then
@@ -79,10 +79,10 @@ fi
 if [ -e $PHP_PATH ] || which $PHP_PATH >/dev/null 2>/dev/null;then
     # 执行操作
     if [[ $ACTION_NAME =~ ^(start|restart)$ ]];then
-        $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
-        $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME
+        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
+        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME
     else
-        $PHP_PATH $SERVER_BASH_PATH/start.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
+        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
     fi
 else
     echo "请安装并配置PHP"

@@ -14,12 +14,11 @@
     ],
     "require": {
         "php": ">=7.0",
-        "workerman/gateway-worker": "^3.0"
+        "ttlphp/workerman-annotation": "dev-main"
     },
     "autoload": {
         "psr-4": {
-            "App\\": "app/",
-            "WorkermanFast\\": "src/"
+            "App\\": "app/"
         }
     },
     "extra": {

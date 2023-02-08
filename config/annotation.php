@@ -12,7 +12,7 @@ return [
     'controller' => [
         App\Controllers\Controller::class,
         '\\App\\Controllers',
-        APP_PATH . '/Controllers'
+        __DIR__ . '/../app/Controllers'
     ],
     /**
      * 中间件注解配置
@@ -21,7 +21,7 @@ return [
     'middleware' => [
         App\Middlewares\Middleware::class,
         '\\App\\Middlewares',
-        APP_PATH . '/Middlewares'
+        __DIR__ . '/../app/Middlewares'
     ],
     /**
      * 定时器注解配置
@@ -30,6 +30,6 @@ return [
     'timer' => [
         App\Timers\Timer::class,
         '\\App\\Timers',
-        APP_PATH . '/Timers'
+        __DIR__ . '/../app/Timers'
     ],
 ];

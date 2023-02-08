@@ -14,7 +14,7 @@ use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 
 /**
- * @Register(class='WorkermanFast\Annotations\BindCall')
+ * @Register(class='BindCall')
  */
 class BindCallController extends Controller {
 
