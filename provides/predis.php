@@ -6,8 +6,8 @@
  */
 
 use Predis\Client;
-use WorkermanFast\Cache;
-use WorkermanFast\Annotations\Cache as CacheAnnotation;
+use WorkermanAnnotation\Cache;
+use WorkermanAnnotation\Annotations\Cache as CacheAnnotation;
 
 if (!class_exists(Client::class)) {
     return;

@@ -6,21 +6,12 @@
 
 namespace App\Services;
 
-use WorkermanFast\AnnotationHandle;
-use WorkermanFast\BusinessException;
+use WorkermanAnnotation\AnnotationHandle;
+use WorkermanAnnotation\BusinessException;
 
 /**
- * @Register(class='Provide')
  * @Register(class='Cache')
  * @Register(class='Transaction')
- * 
- * 加载缓存三方包
- * @Provide(name="predis", action="cache")
- * @Provide(name="doctrine-cache", action="cache")
- * 
- * 加载数据库模型三方包
- * @Provide(name="laravel-model", action="model")
- * @Provide(name="doctrine-orm", action="model")
  */
 abstract class Service {
 

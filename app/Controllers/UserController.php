@@ -6,7 +6,7 @@
 
 namespace App\Controllers;
 
-use WorkermanFast\Message;
+use App\Message;
 use App\Services\UserSerivce;
 
 class UserController extends Controller {
@@ -17,7 +17,7 @@ class UserController extends Controller {
      * @param array $params
      * @return mixed
      * 
-     * @WebsocketMethod(name="login")
+     * @WebsocketMethod()
      * @UseWmiddleware(name="guest")
      * @Validator(name="username", rules="required|int:1", title="用户ID")
      * @Validator(name="password", rules="required|string:3,100", title="用户密码")
@@ -32,7 +32,7 @@ class UserController extends Controller {
      * @param array $params
      * @return mixed
      * 
-     * @WebsocketMethod(name="logout")
+     * @WebsocketMethod()
      * @UseWmiddleware(name="auth")
      */
     public function logout(string $cid, array $params) {

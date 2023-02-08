@@ -6,6 +6,8 @@
 
 namespace App\Middlewares;
 
+use WorkermanAnnotation\BusinessException;
+
 class AuthMiddleware extends Middleware {
 
     /**

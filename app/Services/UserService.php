@@ -9,7 +9,7 @@ namespace App\Services;
 use App\Models\UserModel;
 use GatewayWorker\Lib\Gateway;
 use GatewayWorker\Lib\Context;
-use WorkermanFast\BusinessException;
+use WorkermanAnnotation\BusinessException;
 
 class UserService extends Service {
 
@@ -68,23 +68,6 @@ class UserService extends Service {
             $user = new UserModel($params);
             $user->save();
             $this->setLogin($user);
-        }
-    }
-
-    /**
-     * 更新session
-     * @param UserModel $user
-     * @param \Closure $callback
-     */
-    protected function updateSession(UserModel $user, \Closure $callback) {
-        // 更新session余额
-        if (Gateway::isUidOnline($user['id'])) {
-            foreach (Gateway::getClientIdByUid($user['id']) as $cid) {
-                $session = $callback(Gateway::getSession($cid));
-                if (is_array($session)) {
-                    Gateway::setSession($cid, $session);
-                }
-            }
         }
     }
 

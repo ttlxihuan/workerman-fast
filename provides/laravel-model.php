@@ -6,7 +6,7 @@
  */
 
 use Illuminate\Database\Capsule\Manager;
-use WorkermanFast\Annotations\Transaction;
+use WorkermanAnnotation\Annotations\Transaction;
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
 if (!class_exists(Manager::class) || !class_exists(Eloquent::class)) {
@@ -17,9 +17,9 @@ if (!class_exists(Manager::class) || !class_exists(Eloquent::class)) {
 
     $manager = new Manager();
 
-    $manager->getContainer()['config']['database.default'] = config('database.default') ?: 'default';
+    $manager->getContainer()['config']['database.default'] = workerConfig('database.default') ?: 'default';
 
-    foreach (config('database.connections') ?: [] as $name => $connection) {
+    foreach (workerConfig('database.connections') ?: [] as $name => $connection) {
         // 添加连接信息
         $manager->addConnection($connection, $name);
     }
