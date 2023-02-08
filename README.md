@@ -27,6 +27,15 @@ Configuration
 
 use
 -------------
+### windows系统下启动
+运行 server.bat
+
+### linux系统下启动
+运行 bash server.sh
+
+### PHP命令启动
+运行 php server.php
+
 ### 注解
 workerman-fast 全部是通过注解进行绑定处理应用调用，注解只在启动时同步加载并绑定，后续不产生额外开销（占用内存除外）。
 注解分PHP8和内置两种，PHP8自带注解和PHP7模仿注解。所有注解在使用前必需进行注册。
@@ -90,12 +99,6 @@ app目录是应用处理部分，bin目录为启动相关文件。在app目录�
 ### provides/
 用来配置三方模块初始化加载，如果加载成功则返回true，其它任何返回值认定为失败
 多个相同模块加载只加载一个有效模块，此功能主要用于兼容多个三方便捷模块，目前有数据库和缓存两大模块初始处理
-
-### server.bat
-windows系统下启动服务脚本
-
-### server.sh
-linux系统下启动服务脚本
 
 Annotation
 -------------
@@ -181,6 +184,10 @@ WebSocket请求方法路由注册，指定后此方法就可以通过路由调�
 
 ```php
 // 示例
+/**
+ * @DefineUse(function=true)
+ * @DefineParam(name="name", type="string", default="")
+ */
 class TextAnnotation implements \WorkermanAnnotation\Annotations\iAnnotation {
 
     /**
