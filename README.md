@@ -15,7 +15,7 @@ Installation
 
 ### 使用composer安装
 ```shell
-composer install ttlphp/workerman-fast dev-master
+composer create-project ttlphp/workerman-fast your-appname dev-master
 ```
 
 Configuration
