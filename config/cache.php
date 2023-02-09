@@ -10,7 +10,7 @@ return [
      */
     'default' => 'redis',
     /**
-     * 缓存存储配置，暂时只支持redis和memcached缓存配置
+     * 缓存存储配置
      */
     'stores' => [
         'redis' => [
@@ -20,14 +20,6 @@ return [
             'password' => workerEnv('REDIS_PASSWORD', ''),
             'db' => workerEnv('REDIS_DB', 0),
             'prefix' => '',
-        ],
-        'memcached' => [
-            'driver' => 'memcached',
-            'host' => workerEnv('MEMCACHED_HOST', '127.0.0.1'),
-            'port' => workerEnv('MEMCACHED_PORT', '11211'),
-            'username' => workerEnv('MEMCACHED_USERNAME', ''),
-            'password' => workerEnv('MEMCACHED_PASSWORD', ''),
-            'prefix' => '',
-        ],
+        ]
     ],
 ];

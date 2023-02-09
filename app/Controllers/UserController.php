@@ -7,37 +7,51 @@
 namespace App\Controllers;
 
 use App\Message;
-use App\Services\UserSerivce;
+use App\Services\UserService;
 
 class UserController extends Controller {
 
     /**
      * 登录
-     * @param string $cid
      * @param array $params
      * @return mixed
      * 
      * @WebsocketMethod()
      * @UseWmiddleware(name="guest")
-     * @Validator(name="username", rules="required|int:1", title="用户ID")
+     * @Validator(name="username", rules="required|int:1", title="用户名")
      * @Validator(name="password", rules="required|string:3,100", title="用户密码")
      */
-    public function login(string $cid, array $params) {
-        return UserSerivce::call('login', $cid, $params);
+    public function login(array $params) {
+        $user = UserService::call('login', $params);
+        return Message::success($user);
     }
 
     /**
      * 退出登录
-     * @param string $cid
      * @param array $params
      * @return mixed
      * 
      * @WebsocketMethod()
      * @UseWmiddleware(name="auth")
      */
-    public function logout(string $cid, array $params) {
-        UserSerivce::call('logout', $cid);
+    public function logout(array $params) {
+        UserService::call('logout', $params);
         return Message::success();
+    }
+
+    /**
+     * 注册
+     * @param array $params
+     * @return mixed
+     * 
+     * @WebsocketMethod()
+     * @UseWmiddleware(name="guest")
+     * @Validator(name="username", rules="required|int:1", title="用户名")
+     * @Validator(name="password", rules="required|string:3,100", title="用户密码")
+     */
+    public function register(array $params) {
+        $user = UserService::call('register', $params);
+        return Message::success($user);
     }
 
 }

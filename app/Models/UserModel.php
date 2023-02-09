@@ -11,6 +11,6 @@ class UserModel extends \Model {
     /**
      * @var string 表名
      */
-    protected $table = 'user';
+    protected $table = 'admin';
 
 }
