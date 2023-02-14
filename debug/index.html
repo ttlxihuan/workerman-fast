@@ -284,6 +284,15 @@
             .history-list button{
                 margin: 10px;
             }
+            .block>div:first-child.respond-text{
+                margin-top: 10px;
+            }
+            .desc{
+                font-size: 14px;
+                color: #999;
+                line-height: 25px;
+                padding: 10px;
+            }
         </style>
     </head>
     <body>
@@ -297,6 +306,12 @@
                 <div class="title">HTTP地址</div>
                 <div class="action">
                     <input type="text" name="url" value="http://localhost/" placeholder="标准URL全地址"/>
+                </div>
+            </div>
+            <div class="block">
+                <div class="title">代理转发地址</div>
+                <div class="action">
+                    <input type="text" name="forward_url" value="http://localhost/forward.php" placeholder="代理转发地址，跨域请求建议指定"/>
                 </div>
             </div>
             <div class="block">
@@ -341,7 +356,7 @@
                     <div class="input-table"></div>
                 </div>
                 <div id="http-raw">
-                    <textarea placeholder="原生发送内容，可自由指定信息！" name="raw-contents"></textarea>
+                    <textarea placeholder="原生发送内容，可自由指定信息！" name="http-raw"></textarea>
                 </div>
             </div>
             <div class="block block-column" id="http-file">
@@ -369,18 +384,29 @@
                 <div data-type="http-respond-header">响应头信息</div>
             </div>
             <div class="block block-column" id="http-respond-header">
-
+                <div class="respond-text"></div>
             </div>
             <div class="block block-column" id="http-respond">
                 <div class="nav">
-                    <div data-type="http-original-format">原始格式</div>
-                    <div data-type="http-json-format">JSON格式化</div>
+                    <div data-type="http-original-format" data-format="raw">原始格式</div>
+                    <div data-type="http-json-format" data-format="json">JSON格式化</div>
                 </div>
                 <div id="http-original-format" class="respond-text"></div>
                 <div id="http-json-format" class="respond-text"></div>
             </div>
             <div class="block block-center">
                 <button data-type="send" data-protocol="http">发送</button>
+            </div>
+            <div class="desc">
+                <b>使用说明</b><br/>
+                http请求分ajax或代理请求两种，当请求地址未跨域时可直接使用ajax请求，如果存在跨域建议使用代理请求。<br/>
+                <b>ajax请求</b><br/>
+                cookie全部写在当前域名下且可以自动记录用于下次请求。<br/>
+                <b>代理转发</b><br/>
+                请求请发送到代理转发地址上，全部以POST请求实现<br/>
+                转发POST数据：url、method、params、files、cookies、headers<br/>
+                响应规则：{code: "ok", data: {body, header}} 或 {code:"no", msg:"失败"}<br/>
+                代理地址跨域时响应头信息必需指定：Access-Control-Allow-Origin
             </div>
         </div>
         <div class="body" id="nav-websocket">
@@ -407,7 +433,7 @@
                     <div class="input-table"></div>
                 </div>
                 <div id="websocket-raw">
-                    <textarea placeholder="原生发送内容，可自由指定信息！" name="raw-contents"></textarea>
+                    <textarea placeholder="原生发送内容，可自由指定信息！" name="websocket-raw"></textarea>
                 </div>
             </div>
             <div class="block block-column" id="websocket-pant">
@@ -444,14 +470,19 @@
             </div>
             <div class="block block-column" id="websocket-respond">
                 <div class="nav">
-                    <div data-type="websocket-original-format">原始格式</div>
-                    <div data-type="websocket-json-format">JSON格式化</div>
+                    <div data-type="websocket-original-format" data-format="raw">原始格式</div>
+                    <div data-type="websocket-json-format" data-format="json">JSON格式化</div>
                 </div>
                 <div id="websocket-original-format" class="respond-text"></div>
                 <div id="websocket-json-format" class="respond-text"></div>
             </div>
             <div class="block block-center">
                 <button data-type="send" data-protocol="websocket">发送</button>
+            </div>
+            <div class="desc">
+                <b>使用说明</b><br/>
+                心跳用来维持连接状态，不配置可能会自动被浏览器关闭连接。<br/>
+                当连接地址发送变化时点击发送自动进行切换<br/>
             </div>
         </div>
         <div class="modal hidden" id="import-data-box">
@@ -571,7 +602,7 @@
                 openImportBox.node = node;
                 openImportBox.format = format;
                 box.querySelector('.modal-title').innerHTML = '导入' + String(format).toUpperCase();
-                var textarea = box.querySelector('textarea')
+                var textarea = box.querySelector('textarea');
                 textarea.setAttribute('placeholder', openImportBox.placeholders[format] || '');
                 textarea.focus();
             }
@@ -604,10 +635,10 @@
                     var query = {};
                     switch (format) {
                         case 'form':
-                            query = parseformData(data);
+                            query = parseFormData(data);
                             break;
                         case 'json':
-                            toformData(JSON.parse(data), query);
+                            toFormData(JSON.parse(data), query);
                             break;
                         case 'raw':
                             query = parseRawData(data);
@@ -625,12 +656,12 @@
              * @param {String} prefix
              * @returns {undefined}
              */
-            function toformData(data, target, prefix) {
+            function toFormData(data, target, prefix) {
                 prefix = prefix || '';
                 each(data, function (key, value) {
                     var _key = prefix ? prefix + '[' + key + ']' : key;
-                    if (typeof value === 'object') {
-                        toformData(value, target, _key);
+                    if (typeof value === 'object' && !(value instanceof File)) {
+                        toFormData(value, target, _key);
                     } else {
                         target[_key] = value;
                     }
@@ -641,7 +672,7 @@
              * @param {String} data
              * @returns {undefined}
              */
-            function parseformData(data) {
+            function parseFormData(data) {
                 var query = {};
                 each(data.split(/&/g), function (_, str) {
                     var arr = str.split(/=/);
@@ -684,23 +715,28 @@
             }
             /**
              * 更新数据
-             * @param {Element} node
+             * @param {NodeList} nodes
              * @param {Object} data
              * @returns {undefined}
              */
-            function updateData(node, data) {
-                if (String(node.nodeName).toLowerCase() === 'input') {
-                    if (/^(radio|checkbox)$/i.test(node.type) && !node.checked) {
+            function updateNodesData(nodes, data) {
+                each(nodes, function (_, node) {
+                    if (typeof node.name !== 'string' || node.name.length <= 0) {
                         return;
                     }
-                    if (/^(file)$/i.test(node.type)) {
-                        if (node.files.length > 0) {
-                            formToJsonData(data, node.name, node.files);
+                    if (String(node.nodeName).toLowerCase() === 'input') {
+                        if (/^(radio|checkbox)$/i.test(node.type) && !node.checked) {
+                            return;
                         }
-                        return;
+                        if (/^(file)$/i.test(node.type)) {
+                            each(node.files, function (_, file) {
+                                formToJsonData(data, node.name, file);
+                            });
+                            return;
+                        }
                     }
-                }
-                formToJsonData(data, node.name, node.value);
+                    formToJsonData(data, node.name, node.value);
+                });
             }
             /**
              * 获取发送的所有数据
@@ -708,24 +744,19 @@
              * @returns {Object}
              */
             function getAllSendData(nav) {
-                var body = document.getElementById('nav-' + nav), data = {}, input = {};
+                var body = document.getElementById('nav-' + nav), data = {};
                 // 表格数据
                 each(body.querySelectorAll('div.input-table'), function (_, table) {
-                    each(table.querySelectorAll('input[name]:not(.input-skip)'), function (_, node) {
-                        updateData(node, data);
-                    });
+                    var obj = {}, input = {};
+                    updateNodesData(table.querySelectorAll('input[name]:not(.input-skip)'), obj);
                     // 数据整合
-                    each(data['input-name'] || [], function (key, name) {
-                        formToJsonData(input, name, data['input-value'][key] || '');
+                    each(obj['input-name'] || [], function (key, name) {
+                        formToJsonData(input, name, obj['input-value'][key] || '');
                     });
-                    delete data['input-name'];
-                    delete data['input-value'];
                     data[table.parentNode.id] = input;
                 });
                 // 其它数据
-                each(body.querySelectorAll('div:not(.input-table) input[name],div:not(.input-table) textarea[name]'), function (_, node) {
-                    updateData(node, data);
-                });
+                updateNodesData(body.querySelectorAll('input[name]:not([name^=input-name],[name^=input-value]),textarea[name]:not([name^=input-name],[name^=input-value])'), data);
                 return data;
             }
             /**
@@ -766,9 +797,10 @@
              * @param {String} contents
              * @param {String} dateTime
              * @param {Object} btns
+             * @param {Boolean} unique
              * @returns {undefined}
              */
-            function addHistoryItem(id, title, contents, dateTime, btns) {
+            function addHistoryItem(id, title, contents, dateTime, btns, unique) {
                 var block = document.createElement('div'),
                         text = '<div>' + title + '<i>' + contents + '</i><div class="date-time">' + dateTime + '</div></div>',
                         btn = '';
@@ -777,7 +809,15 @@
                     btn += '<button data-type="' + type + '">' + title + '</button>';
                 });
                 block.innerHTML = text + '<div>' + btn + '</div>';
-                document.querySelector('#' + id + ' div.history-list').appendChild(block);
+                var history = document.querySelector('#' + id + ' div.history-list');
+                if (unique) {
+                    each(history.childNodes, function (_, node) {
+                        if (node.nodeType === 1 && node.querySelector('i').innerHTML === contents) {
+                            history.removeChild(node);
+                        }
+                    });
+                }
+                history.appendChild(block);
                 // 操作事件
                 each(block.querySelectorAll('button[data-type]'), function (_, node) {
                     addEvent(node, 'click', function () {
@@ -794,6 +834,14 @@
                                 document.getElementById('websocket-raw').querySelector('textarea').value = block.querySelector('i').innerHTML;
                                 // 发送
                                 dispatchEvent(document.querySelector('button[data-protocol="websocket"]'), 'click');
+                                break;
+                            case 'rewire-http':
+                                dispatchEvent(document.querySelector('#http-params div[data-type="http-raw"]'), 'click');
+                                // 提取要发送的数据
+                                // 修改数据模式为原生
+                                document.getElementById('http-raw').querySelector('textarea').value = block.querySelector('i').innerHTML;
+                                // 发送
+                                dispatchEvent(document.querySelector('button[data-protocol="http"]'), 'click');
                                 break;
                         }
                     });
@@ -864,6 +912,21 @@
                         String('0' + date.getSeconds()).substr(-2);
             }
             /**
+             * 更新响应结果
+             * @param {String} respondId
+             * @param {String} result
+             * @returns {undefined}
+             */
+            function updateResponse(respondId, result) {
+                var respond = document.getElementById(respondId);
+                respond && each(respond.querySelectorAll('div.nav>div[data-type]'), function (_, node) {
+                    var id = node.getAttribute('data-type'), format = node.getAttribute('data-format');
+                    if (id && format) {
+                        respond.querySelector('#' + id).innerHTML = getFormat(result, format).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    }
+                });
+            }
+            /**
              * 添加Websocket记录
              * @param {String} type
              * @param {String} contents
@@ -885,10 +948,57 @@
                 }
                 if (type === 'send') {
                     btns['rewire-websocket'] = '重发';
-                    addHistoryItem('websocket-history', '', contents, dateTime, btns);
+                    addHistoryItem('websocket-history', '', contents, dateTime, btns, 1);
                 }
-                addHistoryItem('websocket-comm-history', '<b class="color-' + type + '">' + typeHtml[type] + '</b> ', contents, dateTime, btns);
+                addHistoryItem('websocket-comm-history', '<b class="color-' + type + '">' + typeHtml[type] + '</b> ', contents, dateTime, btns, 0);
                 cacheHistory('websocket-comm-history', [type, contents, dateTime]);
+            }
+            /**
+             * 添加Http记录
+             * @param {String|Object} contents
+             * @param {String|null} dateTime
+             * @returns {undefined}
+             */
+            function addHttpHistory(contents, dateTime) {
+                // 添加记录
+                addHistoryItem('http-history', '', typeof contents === 'string' ? contents : JSON.stringify(contents), dateTime || getDateTime(), {
+                    'delete': '删除',
+                    'rewire-http': '重发'
+                }, 1);
+                cacheHistory('http-history', [contents, dateTime]);
+            }
+            /**
+             * 条件显示导航
+             * @param {Boolean} show
+             * @param {String} dataType
+             * @param {String} replaceDataType
+             * @returns {undefined}
+             */
+            function displayNav(show, dataType, replaceDataType) {
+                var nav = document.querySelector('div[data-type="' + dataType + '"]');
+                if (show) {
+                    // 展示上传文件
+                    removeClass(nav, 'hidden');
+                } else {
+                    // 隐藏上传文件
+                    if (/(^|\s+)active(\s+|$)/.test(nav.className)) { // 已经是选中切换掉
+                        dispatchEvent(document.querySelector('div[data-type="' + replaceDataType + '"]'), 'click');
+                    }
+                    addClass(nav, 'hidden');
+                }
+            }
+            /**
+             * http导航条件展示
+             * @returns {undefined}
+             */
+            function httpDisplayNav() {
+                var nav = document.querySelector('#nav-http'),
+                        isPost = /^(POST|PUT)$/.test(nav.querySelector('input[type=radio][name=method]:checked').value),
+                        isForm = nav.querySelector('#http-params div[data-type="http-form"].active'),
+                        eqHost = String(nav.querySelector('input[name="url"]').value + '/').indexOf('//' + location.hostname + '/') >= 0,
+                        hasForward = nav.querySelector('input[name=forward_url]').value;
+                displayNav(isPost && isForm, 'http-file', 'http-params');
+                displayNav(eqHost || hasForward, 'http-cookie', 'http-params');
             }
             // 发送处理
             var websocket = null, sendDataCallback = {
@@ -918,8 +1028,7 @@
                         });
                         addEvent(websocket, 'message', function (event) {
                             addWebsocketCommHistory('message', event.data);
-                            document.querySelector('#websocket-original-format').innerHTML = getFormat(event.data, 'raw');
-                            document.querySelector('#websocket-json-format').innerHTML = getFormat(event.data, 'json');
+                            updateResponse('websocket-respond', event.data);
                         });
                         addEvent(websocket, 'close', function () {
                             addWebsocketCommHistory('close', data.addr);
@@ -931,12 +1040,7 @@
                         });
                         websocket.send_listen = [];
                     }
-                    var sendData;
-                    if (tabs.data === 'websocket-json') {
-                        sendData = JSON.stringify(data['websocket-json']);
-                    } else if (tabs.data === 'websocket-raw') {
-                        sendData = data['raw-contents'];
-                    }
+                    var sendData = typeof data[tabs.data] === 'object' ? JSON.stringify(data['websocket-json']) : data[tabs.data];
                     if (websocket.readyState === WebSocket.OPEN) {
                         websocket.send(sendData);
                         addWebsocketCommHistory('send', sendData);
@@ -949,33 +1053,108 @@
                         alert('HTTP 地址格式错误');
                         return;
                     }
-                    var formData = new FormData();
-                    if (tabs.data === 'http-form') {
-                        each(data['http-form'], function (key, value) {
+                    var params = data[tabs.data], url = data.url, method = data.method, obj = {}, formData = null;
+                    function makeFormData(params, files) {
+                        toFormData(params, obj);
+                        each(obj, function (key, value) {
                             formData.append(key, value);
                         });
-                    } else if (tabs.data === 'http-json') {
-                        sendData = JSON.stringify(data['http-json']);
-                    } else if (tabs.data === 'websocket-raw') {
-                        sendData = data['raw-contents'];
+                        // 上传文件
+                        toFormData(files, obj = {});
+                        each(obj, function (key, file) {
+                            formData.append(key, file, file.name);
+                        });
                     }
-                    // 上传文件
-                    each(data['http-file'], function (key, value) {
-                        formData.append(key, value);
-                    });
+                    if (data.forward_url) {
+                        if (!/^http(s)?:\/\/[\w\.\-_]+/.test(data.forward_url)) {
+                            alert('代理转发地址格式错误');
+                            return;
+                        }
+                        formData = new FormData();
+                        formData.append('url', url);
+                        formData.append('method', method);
+                        makeFormData({cookies: data['http-cookie'], headers: data['http-header']}, {});
+                        if (tabs.data === 'http-form') {
+                            makeFormData({params: params}, {files: data['http-file']});
+                        } else if (tabs.data === 'http-json') {
+                            params !== {} && formData.append('params', JSON.stringify(params));
+                        } else {
+                            params !== '' && formData.append('params', params);
+                        }
+                        url = data.forward_url;
+                        method = 'POST';
+                    } else {
+                        // 写参数
+                        if (data.method === 'POST' || data.method === 'PUT') {
+                            if (tabs.data === 'http-form') {
+                                formData = new FormData();
+                                makeFormData(params, data['http-file']);
+                            } else if (tabs.data === 'http-json') {
+                                formData = JSON.stringify(params);
+                            } else {
+                                formData = params;
+                            }
+                        } else {
+                            var query;
+                            if (tabs.data !== 'http-raw') {
+                                var array = [];
+                                toFormData(params, obj);
+                                each(obj, function (key, value) {
+                                    array.push(key + '=' + encodeURIComponent(value));
+                                });
+                                query = array.join('&');
+                            } else {
+                                query = params;
+                            }
+                            if (String(url).indexOf('?') >= 0) {
+                                url += '&' + query;
+                            } else {
+                                url += '?' + query;
+                            }
+                        }
+                    }
+                    // 添加记录
+                    addHttpHistory(params);
+                    // 请求处理
                     var request = new XMLHttpRequest();
-                    request.open(data.method, data.url);
+                    request.withCredentials = true;
+                    request.open(method, url);
                     // 事件处理
-
-
-
-
-
-
-
+                    request.onreadystatechange = function () {
+                        if (request.readyState === 4) {
+                            var respond, headers;
+                            if (data.forward_url) {
+                                try {
+                                    var json = JSON.parse(request.responseText);
+                                    respond = json.data.body;
+                                    headers = json.data.header;
+                                } catch (err) {
+                                }
+                            }
+                            updateResponse('http-respond', respond || request.responseText);
+                            document.querySelector('#http-respond-header>div.respond-text').innerHTML = headers || request.getAllResponseHeaders();
+                        }
+                    };
+                    if (!data.forward_url) {
+                        // 发送头信息
+                        each(data['http-header'], function (key, value) {
+                            request.setRequestHeader(key, value);
+                        });
+                        // 发送Cookie（实际修改本地Cookie即可）
+                        each(data['http-cookie'], function (key, value) {
+                            document.cookie += key + '=' + value + '; ';
+                        });
+                    }
+                    // 发送数据
                     request.send(formData);
                 }
             };
+            // HTTP专用切换
+            each(document.querySelectorAll('input[type=radio][name=method]'), function (_, node) {
+                addEvent(node, 'click', httpDisplayNav);
+            });
+            addEvent(document.querySelector('#nav-http input[name="url"]'), 'change', httpDisplayNav);
+            addEvent(document.querySelector('#http-params>div.nav'), 'click', httpDisplayNav);
             // 恢复历史记录
             (function () {
                 var url = getStorage('websocket-url');
@@ -987,6 +1166,10 @@
                         // 写记录
                         addWebsocketCommHistory.apply(this, item);
                     });
+                });
+                each(getStorage('http-history', []), function (_, item) {
+                    // 写记录
+                    addHttpHistory.apply(this, item);
                 });
             })();
             // 固定按键事件
@@ -1078,24 +1261,6 @@
                     });
                 });
             });
-            // 切换表单
-            each(document.querySelectorAll('input[type=radio][name=method]'), function (_, node) {
-                addEvent(node, 'click', function () {
-                    var nav_file = document.querySelector('div[data-type="http-file"]'),
-                            input_file = document.querySelector('#http-file');
-                    if (/^(POST|PUT)$/.test(node.value)) {
-                        // 展示上传文件
-                        removeClass(nav_file, 'hidden');
-                        removeClass(input_file, 'hidden');
-                    } else {
-                        // 隐藏上传文件
-                        if (/(^|\s+)active(\s+|$)/.test(nav_file.className)) { // 已经是选中切换掉
-                            dispatchEvent(document.querySelector('div[data-type="http-params"]'), 'click');
-                        }
-                        addClass(nav_file, 'hidden');
-                    }
-                });
-            });
             // 生成输入表格
             var input_table = '<table><thead><tr><th width="50">序号</th><th width="25%">参数名</th><th>参数值</th><th width="15%">操作</th></tr></thead><tbody></tbody></table>';
             each(document.querySelectorAll('div.input-table'), function (_, node) {
@@ -1103,7 +1268,7 @@
                 var type = node.getAttribute('data-input') || 'text', tbody = node.querySelector('tbody'), count = 1;
                 function addLine() {
                     var tr = document.createElement('tr');
-                    tr.innerHTML = '<td>' + count + '</td><td><input type="text" name="input-name[]" value="" class="input-skip" placeholder="参数字段名"/></td><td><input type="' + type + '" name="input-value[]" class="input-skip" placeholder="参数字段值"/></td><td><button class="hidden">删除</button></td>';
+                    tr.innerHTML = '<td>' + count + '</td><td><input type="text" name="input-name[]" value="" class="input-skip" placeholder="参数字段名，为空不发送"/></td><td><input type="' + type + '" name="input-value[]" class="input-skip" placeholder="参数字段值"/></td><td><button class="hidden">删除</button></td>';
                     tbody.appendChild(tr);
                     count++;
                     // 默认事件
@@ -1135,6 +1300,8 @@
                 });
                 addLine();
             });
+            // 初始化
+            httpDisplayNav();
         })();
     </script>
 </html>
