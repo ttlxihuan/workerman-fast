@@ -80,7 +80,6 @@ if [ -e $PHP_PATH ] || which $PHP_PATH >/dev/null 2>/dev/null;then
     # 执行操作
     if [[ $ACTION_NAME =~ ^(start|restart)$ ]];then
         $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
-        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME
     else
         $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
     fi
