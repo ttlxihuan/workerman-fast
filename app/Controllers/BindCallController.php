@@ -55,8 +55,8 @@ class BindCallController extends Controller {
             if ($error instanceof BusinessException) {
                 return Message::make($error->getMessage(), $error->getCodeValue());
             } else {
-                
-                return Message::fail('Internal Server Error'. $error->getMessage(). PHP_EOL.$error->getTraceAsString());
+                BusinessWorker::log("[ERROR] " . $error->getMessage() . PHP_EOL . $error->getTraceAsString());
+                return Message::fail('Internal Server Error');
             }
         } else {
             return Message::fail('Not Found');
