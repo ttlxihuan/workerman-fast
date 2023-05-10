@@ -86,10 +86,12 @@ class BindCallController extends Controller {
     /**
      * 有终端连接时调用（不是网关连接）
      * @param string $client_id     终端唯一编号
+     * @param array $data           请求数据，在websocket时有效
+     *                              可用于提取连接地址及相关参数，用来记录相关信息
      * 
      * @BindCall()
      */
-    public function connect(string $client_id) {
+    public function connect(string $client_id, array $data = null) {
         
     }
 

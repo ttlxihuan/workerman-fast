@@ -27,12 +27,6 @@
  * 特别说明：多注册中心时需要配置 register_addresses ，将所有注册中心地址指定在内。单一注册中心里可不配置 register_addresses 。
  */
 
-$register_addresses = null;
-// 多注册中心里配置这里即可，将所有注册中心地址列出来，不需要指定协议
-//if (workerEnv('APP_ENV') === 'production') {
-//    $register_addresses = [];
-//}
-
 return [
     /**
      * 注册服务配置
@@ -49,10 +43,6 @@ return [
          */
         'addr' => workerEnv('REGISTER_ADDR', '127.0.0.1:18000'),
     ],
-    /**
-     * 注册中心地址列表，多注册中心时配置
-     */
-    'register_addresses' => $register_addresses,
     /**
      * 网关配置
      * 文档：https://www.workerman.net/doc/gateway-worker/gateway.html
