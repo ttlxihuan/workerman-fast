@@ -8,6 +8,7 @@ namespace App\Controllers;
 
 use Exception;
 use App\Message;
+use GatewayWorker\Lib\Context;
 use GatewayWorker\BusinessWorker;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
@@ -55,7 +56,7 @@ class BindCallController extends Controller {
             if ($error instanceof BusinessException) {
                 return Message::make($error->getMessage(), $error->getCodeValue());
             } else {
-                BusinessWorker::log("[ERROR] " . $error->getMessage() . PHP_EOL . $error->getTraceAsString());
+                BusinessWorker::log("[ERROR] " . Context::$client_id . ': ' . $error->getMessage() . PHP_EOL . $error->getTraceAsString());
                 return Message::fail('Internal Server Error');
             }
         } else {
