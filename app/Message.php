@@ -56,8 +56,9 @@ class Message {
      * @return array
      */
     public static function push(string $type, array $data, string $code = 'ok', string $msg = '', string $typeKeyName = 'type') {
-        $data[$typeKeyName] = $type;
-        return static::make($msg, $code, $data);
+        $result = static::make($msg, $code, $data);
+        $result[$typeKeyName] = $type;
+        return $result;
     }
 
 }
