@@ -44,15 +44,6 @@ if (!class_exists(Manager::class) || !class_exists(Eloquent::class)) {
     // 生成类别名
     class_exists('\\DB') || class_alias(Manager::class, '\\DB');
     class_exists('\\Model') || class_alias(Eloquent::class, '\\Model');
-
-    if (workerEnv('APP_DEBUG')) {
-        // 记录下日志
-        foreach ((array) workerConfig('database.connections', []) as $name => $connection) {
-            DB::listen(function (QueryExecuted $query) {
-                BusinessWorker::log(BASE_PATH . '/logs/sql.log', "({$query->time}s)SQL: " . Str::replaceArray('?', $query->bindings, $query->sql), FILE_APPEND);
-            });
-        }
-    }
 })();
 
 return true;
