@@ -127,10 +127,6 @@ return [
          * 业务进程名称，用来区分不同的节点
          */
         'name' => workerEnv('WORKER_NAME', 'workerman-worker'),
-        /**
-         * 是否启动定时器，用于分布式定时器配置
-         */
-        'timer' => workerEnv('WORKER_TIMER', false),
     ],
     /**
      * 服务运行时区

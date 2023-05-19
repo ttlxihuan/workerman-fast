@@ -5,10 +5,7 @@
  * 当安装 illuminate/database 模块时自动或指定加载此文件
  */
 
-use Illuminate\Support\Str;
-use GatewayWorker\BusinessWorker;
 use Illuminate\Database\Capsule\Manager;
-use Illuminate\Database\Events\QueryExecuted;
 use WorkermanAnnotation\Annotations\Transaction;
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
