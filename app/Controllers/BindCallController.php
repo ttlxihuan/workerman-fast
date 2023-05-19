@@ -73,14 +73,6 @@ class BindCallController extends Controller {
      */
     public function start(int $id) {
         BusinessWorker::log("[START] worker-id: $id");
-        // 调试记录SQL
-        if (workerEnv('APP_DEBUG') && class_exists('DB')) {
-            foreach ((array) workerConfig('database.connections', []) as $name => $connection) {
-                \DB::connection($name)->listen(function (\Illuminate\Database\Events\QueryExecuted $query) {
-                    file_put_contents(BASE_PATH . '/logs/sql.log', "({$query->time}s)SQL: " . \Illuminate\Support\Str::replaceArray('?', $query->bindings, $query->sql), FILE_APPEND);
-                });
-            }
-        }
     }
 
     /**
