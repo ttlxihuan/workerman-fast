@@ -12,7 +12,7 @@ class AuthMiddleware extends Middleware {
 
     /**
      * 访客验证
-     * @Middleware(name="guest")
+     * @Middleware()
      */
     public function guest() {
         if (isset($_SESSION['user'])) {
@@ -22,7 +22,7 @@ class AuthMiddleware extends Middleware {
 
     /**
      * 授权验证
-     * @Middleware(name="auth")
+     * @Middleware()
      */
     public function auth() {
         if (empty($_SESSION['user'])) {

@@ -57,6 +57,11 @@ return [
          */
         'name' => workerEnv('GATEWAY_NAME', 'workerman-gateway'),
         /**
+         * 处理进程数，不指定 = CPU核数
+         * windows系统下无效，永远为1
+         */
+        'count' => null,
+        /**
          * 网关对外监听协议及地址，用来与用户进行通信
          * 支持的协议有：websocket、text、frame、自定义协议、tcp等
          */
@@ -127,6 +132,30 @@ return [
          * 业务进程名称，用来区分不同的节点
          */
         'name' => workerEnv('WORKER_NAME', 'workerman-worker'),
+        /**
+         * 处理进程数，不指定 = CPU核数 * 6
+         * windows系统下无效，永远为1
+         */
+        'count' => null
+    ],
+    /**
+     * 定时器处理，剥离于业务处理可避免相互影响
+     * 文档：https://www.workerman.net/doc/gateway-worker/timer.html
+     */
+    'timer' => [
+        /**
+         * 分布式需要配置此项，可以保证只在指定节点中启动
+         */
+        'active' => workerEnv('TIMER_ACTIVE', false),
+        /**
+         * 进程名称，用来区分不同的节点
+         */
+        'name' => workerEnv('TIMER_NAME', 'workerman-timer'),
+        /**
+         * 处理进程数
+         * windows系统下无效，永远为1
+         */
+        'count' => 1
     ],
     /**
      * 服务运行时区
