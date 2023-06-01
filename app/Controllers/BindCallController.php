@@ -88,12 +88,10 @@ class BindCallController extends Controller {
     /**
      * 有终端连接时调用（不是网关连接）
      * @param string $client_id     终端唯一编号
-     * @param array $data           请求数据，在websocket时有效
-     *                              可用于提取连接地址及相关参数，用来记录相关信息
      * 
      * @BindCall()
      */
-    public function connect(string $client_id, array $data = null) {
+    public function connect(string $client_id) {
         
     }
 
@@ -105,6 +103,36 @@ class BindCallController extends Controller {
      */
     public function close(string $client_id) {
         
+    }
+
+    /**
+     * WebSocket 连接时回调
+     * @param string $client_id
+     * @param mixed $data
+     * 
+     * @BindCall()
+     */
+    public function webSocketConnect($client_id, $data) {
+        
+    }
+
+    /**
+     * 网关处理WebSocket连接回调，可用于初始化session等相关操作
+     * 此处尽量不要写资源处理或网络请求操作，以免影响网关性能
+     * @param TcpConnection $connection
+     * @param mixed $request
+     */
+    public static function onGatewayWebSocketConnect(TcpConnection $connection, $request) {
+        // 在网关中初始好session，保证业务处理肯定能获取到
+        $session = [
+            'uri' => is_object($request) ? $request->uri() : $_SERVER['REQUEST_URI'],
+            'query' => [],
+        ];
+        $query = is_object($request) ? $request->queryString() : $_SERVER['QUERY_STRING'];
+        if ($query) {
+            parse_str($query, $session['query']);
+        }
+        $connection->session = Context::sessionEncode(array_filter($session));
     }
 
 }

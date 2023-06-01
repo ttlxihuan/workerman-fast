@@ -90,6 +90,11 @@ return [
          */
         'port' => workerEnv('GATEWAY_PORT', '19000'),
         /**
+         * WebSocket协议连接网关层回调处理
+         * 回调中不建议有资源等待操作（比如：写文件、网络请求等），以免影响网关性能
+         */
+        'onWebSocketConnect' => App\Controllers\BindCallController::class . '::onGatewayWebSocketConnect',
+        /**
          * 网关与用户的连接进行心跳处理
          * 心跳包用来保持连接状态，分网关给用户发和用户给网关发两种模式
          * 心跳包处理是通过循环所有连接进行判断处理的，连接数越多越耗性能，间隔时间不建议太短
