@@ -62,6 +62,7 @@ namespace App\Controllers;
  * @Register(class='Validator')
  * 
  * @Register(class='Provide')
+ * @Register(class='SessionCache')
  * 
  * 使用路由
  * @-HttpRouter()

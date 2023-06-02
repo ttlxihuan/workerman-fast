@@ -9,7 +9,7 @@ namespace App\Controllers;
 use App\Message;
 use App\Services\UserService;
 
-class UserController extends Controller {
+class UserController extends BaseController {
 
     /**
      * 登录

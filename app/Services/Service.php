@@ -26,13 +26,6 @@ use WorkermanAnnotation\BusinessException;
 /**
  * @Register(class='Cache')
  * @Register(class='Transaction')
- * @Register(class='Provide')
- * 
- * 加载缓存三方包
- * @Provide(name="predis", action="cache")
- * 
- * 加载数据库模型三方包
- * @Provide(name="laravel-model", action="model")
  */
 abstract class Service {
 
