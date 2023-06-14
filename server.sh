@@ -13,6 +13,10 @@ for((INDEX=1; INDEX<=$#; INDEX++));do
         -h|--help)
             SHOW_HELP='1'
         ;;
+        --node=*)
+            NODE_NAME=${@:$INDEX:1}
+            NODE_NAME=${NODE_NAME#*=}
+        ;;
         --node)
             NODE_NAME=${@:((++INDEX)):1}
         ;;
@@ -81,7 +85,7 @@ if [ -e $PHP_PATH ] || which $PHP_PATH >/dev/null 2>/dev/null;then
     if [[ $ACTION_NAME =~ ^(start|restart|status)$ ]];then
         $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
     else
-        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -g
+        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
     fi
 else
     echo "请安装并配置PHP"
