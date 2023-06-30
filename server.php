@@ -4,6 +4,6 @@
  * 服务管理入口文件
  */
 
-require './vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
 serverRun();
