@@ -50,8 +50,8 @@ namespace App\Controllers;
 
 /**
  * 辅助处理
- * @Register(class='UseWmiddleware')
  * @Register(class='Validator')
+ * @Register(class='UseWmiddleware')
  * 
  * @Register(class='Provide')
  * @Register(class='SessionCache')
