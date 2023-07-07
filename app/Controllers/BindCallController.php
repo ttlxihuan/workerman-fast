@@ -90,7 +90,7 @@ class BindCallController extends Controller {
      * @param string $client_id     终端唯一编号
      * 
      * @BindCall()
-     * @SessionCache(init=true)
+     * @SessionCache()
      */
     public function connect(string $client_id) {
         
@@ -113,7 +113,7 @@ class BindCallController extends Controller {
      * @param mixed $data
      * 
      * @BindCall()
-     * @SessionCache(init=true)
+     * @SessionCache()
      */
     public function webSocketConnect($client_id, $data) {
         
