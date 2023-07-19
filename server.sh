@@ -5,6 +5,7 @@
 PHP_PATH=php
 ACTION_NAME=""
 ENV_NAME="production"
+USER_GROUP="workerman"
 SHOW_HELP='0'
 NODE_NAME=''
 # 参数处理
@@ -42,7 +43,7 @@ for((INDEX=1; INDEX<=$#; INDEX++));do
         ;;
     esac
 done
-if [ $# = '0' -o $SHOW_HELP = '1' ];then
+if [ $SHOW_HELP = '1' ];then
     echo "
 linux系统下服务管理脚本，用来快速启动指定环境下的服务。
 
@@ -79,13 +80,20 @@ if [ -z "$ENV_NAME" ];then
     echo "请指定环境名"
     exit 1
 fi
-
+# 创建用户组
+if ! id "$USER_GROUP" >/dev/null 2>/dev/null && ! useradd -M -U -s '/sbin/nologin' $USER_GROUP;then
+    echo "创建启动用户失败"
+    exit 1
+fi
+if [ "$USER_GROUP" = 'root' ];then
+    echo "不建议使用root启动服务"
+fi
 if [ -e $PHP_PATH ] || which $PHP_PATH >/dev/null 2>/dev/null;then
     # 执行操作
     if [[ $ACTION_NAME =~ ^(start|restart|status)$ ]];then
-        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
+        sudo -u $USER_GROUP $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME -d
     else
-        $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
+        sudo -u $USER_GROUP $PHP_PATH $SERVER_BASH_PATH/server.php $ACTION_NAME --env=$ENV_NAME --node=$NODE_NAME
     fi
 else
     echo "请安装并配置PHP"
