@@ -116,7 +116,7 @@ class BindCallController extends Controller {
      * @SessionCache()
      */
     public function webSocketConnect($client_id, $data) {
-        
+        $_SESSION = []; // 强制新连接初始session
     }
 
     /**
